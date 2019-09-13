@@ -9,3 +9,4 @@ t
 /platform.inc
 *.po
 romfs
+*.hex
