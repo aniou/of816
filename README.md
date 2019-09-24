@@ -1,4 +1,4 @@
-_Branch (go65c816) provides support for - not released yet - go65c816 emulator, 
+_Branch (go65c816) provides support for [go65c816 emulator](https://github.com/aniou/go65c816), 
 created as first step to port of816 to [C256 Foenix](https://asciinema.org/a/268314)._
 
 [See of816 on go65c816](https://asciinema.org/a/268314)
