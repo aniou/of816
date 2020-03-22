@@ -1,3 +1,8 @@
+# NOTE about fork
+This particular fork was created for [C256 Foenix](https://wiki.c256foenix.com/)
+port. For details see [platforms/C256](https://github.com/aniou/of816/tree/C256/platforms/C256) directory.
+
+
 # OF816
 OF816 is a [65C816](https://www.westerndesigncenter.com/wdc/w65c816s-chip.cfm)
 Forth implementation heavily inspired by 
