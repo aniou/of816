@@ -7,6 +7,12 @@ on real hardware, C256 FMX Rev C4A.
 The port itself relies on default [FMX Kernel](https://github.com/Trinity-11/Kernel_FMX/)
 but replaces included [BASIC](https://github.com/pweingar/BASIC816)
 
+**Warning:** it doesn't work in [Foenix IDE](https://github.com/Trinity-11/FoenixIDE), the
+case is under investigation now. 
+
+It will be possible to run `of816` in [go65c816 emulator](https://github.com/aniou/go65c816) 
+in near future (code exist's but isn't published yet).
+
 ## Compiling
 
 Port requires following utilities to be in `$PATH` to compile:
