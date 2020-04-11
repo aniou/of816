@@ -29,8 +29,8 @@ external
 21 CONSTANT NAK
 24 CONSTANT CAN
 
-10 constant txtime \ 1 sec
-20 constant stime  \ 2 sec
+20 constant txtime \ 1 sec
+50 constant stime  \ 0.2 sec
 50 constant ltime  \ 5 sec
 
 variable rec#      \ current record number 
@@ -81,25 +81,26 @@ create rec-buf 128 allot
 
 : handle-tmout ( rec -- response)
   drop
-  ." timeout, tries: " ?
+  ." timeout, tries: " tries @ .
   NAK
 ;
 
 : handle-eot ( rec -- response)
   drop
-  cr ." finished"
+  ." EOT" cr
   ACK tx
   EOT
 ;
 
 : handle-ack ( rec -- response)
+  drop
   \ seq-check here - true if ok
   true
   if 
     \ buf-copy here, no error check or abort
     1 rec# +!
-    ." record ok" 
-    rec-buf 128 type \ debug
+    ." record ok"  
+    cr rec-buf 128 type cr \ debug
     ACK
   else
     ." bad cksum, tries: " ?
@@ -120,8 +121,11 @@ create rec-buf 128 allot
   stime swait  ( rec#, comp )
   ." comp "
   REC-BUF 128 OVER + SWAP DO
-  ." ."
-  stime swait I C! LOOP
+  stime swait 
+  dup -1 = if ." ." else ." +" then
+  I C! LOOP
+
+  drop \ comp not used yet
   ack
 ;
 
@@ -175,10 +179,11 @@ create rec-buf 128 allot
   1 uart-select
   begin
     receive
-    .s
-    EOT =
-  until
-  cr ." test end" cr
+    case
+     NAK of cr ." abort, too many attempts " cr exit endof
+     EOT of cr ." success"                   cr exit endof
+    endcase
+  again
 ;
 
 
