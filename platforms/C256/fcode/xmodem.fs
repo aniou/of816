@@ -2,14 +2,47 @@
 \ 2020, Piotr Meyer <aniou+forth@smutek.pl>
 
 \ code based on:
-\
+
 \ XMODEM PROTOCOL ON FORTH-83
 \ Wilson M. Federici
 \ 1208 NW Grant
 \ Corvallis OR 97330  (503) 753-6744
 \ Version 1.01  9/85
 
+\ xxx - ." should be converted to something like 'status' word
+\          that show progress in statusline or does nothing
 
+\ simplest XMODEM session
+
+\ 
+\ SENDER                                      RECEIVER
+\ 
+\                                         <-- NAK
+\ SOH 01 FE Data[128] CSUM                -->
+\                                         <-- ACK
+\ SOH 02 FD Data[128] CSUM                -->
+\                                         <-- ACK
+\ SOH 03 FC Data[128] CSUM                -->
+\                                         <-- ACK
+\ SOH 04 FB Data[128] CSUM                -->
+\                                         <-- ACK
+\ SOH 05 FA Data[100] CPMEOF[28] CSUM     -->
+\                                         <-- ACK
+\ EOT                                     -->
+\                                         <-- ACK
+
+\ steps: 
+\ receive (main loop)
+\  - set first response (NAK)
+\  - waitrec    
+\      - clean-line (drop all from line)
+\      - send response
+\      - receive first byte
+\      - if SOH
+\          - rxrec (validate here)
+\      - else return first byte or timeout (-1)
+\  - handle ACK/NAK/EOT and retries (3)
+\    and set next response based on them
 
 start1 decimal
 
@@ -104,12 +137,12 @@ create rec-buf 128 allot
   EOT
 ;
 
+\ cksum is calculated in rxrec now
+\ so this word does almost nothing
 : handle-ack ( rec -- response)
   drop
-  \ seq-check here - true if ok
   true
   if 
-    \ buf-copy here, no error check or abort
     1 rec# +!
     ." record ok"  
     cr rec-buf 128 type cr \ debug
@@ -126,8 +159,7 @@ create rec-buf 128 allot
   NAK
 ;
 
-\ simplest checksum
-\ at rec-buf
+\ simplest checksum at rec-buf
 : run-sum  ( -- cksum ) 
   0 rec-buf 128                        ( 0, addr,     128 )
   over                                 ( 0, addr,     128,  addr)
@@ -135,58 +167,63 @@ create rec-buf 128 allot
   do i c@ + loop 255 and               ( cksum )
 ; 
 
-\ receive single record
-\ calculate sum
-: rxrec ( rec# -- rec#, ACK/NAK)
-  drop
-  stime swait  ( rec# )
-  dup
-  255
-  xor
-  stime swait  ( rec#, comp )
-  <> if 
-    ." rec not math complementary! "
-    nak
-    exit
-  then
-
-  REC-BUF 128 OVER + SWAP DO
-  stime swait 
-  dup -1 = if ." !" else ." #" then
-  I C! LOOP
-
-  stime swait  ( rec#, comp, chksum )
-  run-sum
-  .s
-  = if 
-    ." cksum ok "
-    ack
-  else
-    ." bad cksum "
-    nak
+\ draw some bars, more-or-less every 8
+: draw-progress ( addr -- )
+  15 and
+   8 =
+  0<> if
+    ." #"
   then
 ;
 
 
+\ receive single record calculate sum (crc not yet)
+\ exit when error - line is cleaned at begginning of next record
+\ xxx - maybe move calculations to handle-ack?
+: rxrec ( rec# -- rec#, ACK/NAK)
+  stime swait                           ( rec#, rec#/-1 )
+  dup -1 = if ." !" else ." #" then
+  dup                                   ( rec#, rec#/-1, rec#/-1 )
+  255 xor                               ( rec#, rec#/-1, comp1 )
+  stime swait                           ( rec#, rec#/-1, comp1, comp2/-1 )
+  dup -1 = if ." !" else ." #" then
+  <> if 
+    ."  rec not math complementary! "
+    2drop                               \ drop both rec# - not needed
+    nak                                       
+    exit						
+  then
+  \ we probably doesn't need 
+  \ a rec# floating around?
+  over                                   ( rec#, rec#/-1, rec# )
+  <> if			
+    ."  bad record no! "
+    nak
+    exit
+  then
 
-\ 
-\ : RXREC  (  -- rec#, ACK/NAK  )
-\   SWAIT  SWAIT   ( rec# and comp. )
-\   REC-BUF 128 OVER + SWAP DO
-\        SWAIT I C! LOOP
-\   SWAIT  RUN-SUM  CHKSUM @ -
-\      IF CR ." Checksum error" DROP NAK
-\      ELSE  OVER NOT XOR 255 AND
-\           IF CR ." Complement error" NAK
-\           ELSE ACK
-\           THEN
-\      THEN  ;
-\ 
+  ."  "
+  rec-buf 128 over + swap do
+    stime swait 
+    dup -1 = if ." !" else i draw-progress then
+    i c! 
+  loop
+  ."  "
 
+  stime swait  							( rec#, chksum1 )
+  dup -1 = if ." !" else ." #" then
+  run-sum                               ( rec#, chksum1, chksum2 )
+  = if 
+    ."  cksum ok "
+    ack
+  else
+    ."  bad cksum "
+    nak
+  then
+;
 
-\ send response and wait for information 
-\ from other side
-\ SOH means that a new record is on the way
+\ send response and wait for information from other side
+\ SOH means that a new record is on the way  
 \ otherwhise return status
 : waitrec ( resp, rec# -- rec#, ack/nak/eot/-1 )
   clean-line   
@@ -230,23 +267,6 @@ create rec-buf 128 allot
   again
 ;
 
-
-\ 
-\ SENDER                                      RECEIVER
-\ 
-\                                         <-- NAK
-\ SOH 01 FE Data[128] CSUM                -->
-\                                         <-- ACK
-\ SOH 02 FD Data[128] CSUM                -->
-\                                         <-- ACK
-\ SOH 03 FC Data[128] CSUM                -->
-\                                         <-- ACK
-\ SOH 04 FB Data[128] CSUM                -->
-\                                         <-- ACK
-\ SOH 05 FA Data[100] CPMEOF[28] CSUM     -->
-\                                         <-- ACK
-\ EOT                                     -->
-\                                         <-- ACK
 
 
 
