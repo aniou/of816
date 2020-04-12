@@ -140,26 +140,28 @@ create rec-buf 128 allot
 : rxrec ( rec# -- rec#, ACK/NAK)
   drop
   stime swait  ( rec# )
-  ."  rec "
+  dup
+  255
+  xor
   stime swait  ( rec#, comp )
-  ." comp "
-
-
+  <> if 
+    ." rec not math complementary! "
+    nak
+    exit
+  then
 
   REC-BUF 128 OVER + SWAP DO
   stime swait 
-  dup -1 = if ." !" else ." +" then
+  dup -1 = if ." !" else ." #" then
   I C! LOOP
 
   stime swait  ( rec#, comp, chksum )
   run-sum
   .s
   = if 
-    drop \ comp not used yet
     ." cksum ok "
     ack
   else
-    drop \ comp not used yet
     ." bad cksum "
     nak
   then
