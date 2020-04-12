@@ -1,4 +1,16 @@
 
+\ 2020, Piotr Meyer <aniou+forth@smutek.pl>
+
+\ code based on:
+\
+\ XMODEM PROTOCOL ON FORTH-83
+\ Wilson M. Federici
+\ 1208 NW Grant
+\ Corvallis OR 97330  (503) 753-6744
+\ Version 1.01  9/85
+
+
+
 start1 decimal
 
 ." load XMODEM code" cr
@@ -29,8 +41,8 @@ external
 21 CONSTANT NAK
 24 CONSTANT CAN
 
-20 constant txtime \ 1 sec
-50 constant stime  \ 0.2 sec
+10 constant txtime \ 1 sec
+20 constant stime  \ 2 sec
 50 constant ltime  \ 5 sec
 
 variable rec#      \ current record number 
@@ -114,19 +126,43 @@ create rec-buf 128 allot
   NAK
 ;
 
+\ simplest checksum
+\ at rec-buf
+: run-sum  ( -- cksum ) 
+  0 rec-buf 128                        ( 0, addr,     128 )
+  over                                 ( 0, addr,     128,  addr)
+  + swap                               ( 0, addr+128, addr )
+  do i c@ + loop 255 and               ( cksum )
+; 
+
+\ receive single record
+\ calculate sum
 : rxrec ( rec# -- rec#, ACK/NAK)
   drop
   stime swait  ( rec# )
   ."  rec "
   stime swait  ( rec#, comp )
   ." comp "
+
+
+
   REC-BUF 128 OVER + SWAP DO
   stime swait 
-  dup -1 = if ." ." else ." +" then
+  dup -1 = if ." !" else ." +" then
   I C! LOOP
 
-  drop \ comp not used yet
-  ack
+  stime swait  ( rec#, comp, chksum )
+  run-sum
+  .s
+  = if 
+    drop \ comp not used yet
+    ." cksum ok "
+    ack
+  else
+    drop \ comp not used yet
+    ." bad cksum "
+    nak
+  then
 ;
 
 
@@ -146,6 +182,10 @@ create rec-buf 128 allot
 \ 
 
 
+\ send response and wait for information 
+\ from other side
+\ SOH means that a new record is on the way
+\ otherwhise return status
 : waitrec ( resp, rec# -- rec#, ack/nak/eot/-1 )
   clean-line   
   swap                                 ( rec#, resp )
@@ -155,6 +195,7 @@ create rec-buf 128 allot
 ;
 
 
+\ main loop
 : receive ( -- resp   - resp eq EOT is considered success)
   1 rec# !
   4 tries !
@@ -174,6 +215,7 @@ create rec-buf 128 allot
   until
 ;
 
+\ word used for testing
 : txm 
   cr ." test start" cr
   1 uart-select
