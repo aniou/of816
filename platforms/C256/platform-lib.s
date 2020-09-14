@@ -82,10 +82,11 @@ table:    .addr _sf_pre_init
 
 
 .proc     _sf_pre_init
-	  stz ESCMODE
-	  stz ESCACC
-          plx
-          jmp   _sf_success     ; assume WDC monitor already did it
+		stz ESCMODE
+		stz ESCACC
+		stz ESCDIAG
+		plx
+		jmp   _sf_success     ; assume WDC monitor already did it
 .endproc
 
 
@@ -96,7 +97,7 @@ table:    .addr _sf_pre_init
 
 ; -----------------------------------------------------------------------
 
-.proc     _sf_emit_old
+.proc     _sf_emit_good
           plx
           jsr   _popay
           phx
@@ -119,18 +120,21 @@ table:    .addr _sf_pre_init
 ; new version of _sf_emit, based on IIgs platform
 
 .proc     _con_write
-		php
+		;php   - powinno byc wczesniej
 		sep   #SHORT_A|SHORT_I
 		.a8
 		.i8
 		tya
 		jsl $001018       ; PUTCH kernel function, XXX - change to symbolic name
-		plp
-          	rep   #SHORT_A|SHORT_I
+		;plp   - powinno byc pozniej
+		rep   #SHORT_A|SHORT_I
                 .a16
                 .i16
 		rts
 .endproc
+
+; -----------------------------------------------------------------------
+; kind of sketch
 
 .proc     _sf_emit
           ; we don't need these, we work with D set to 9100
@@ -139,6 +143,7 @@ table:    .addr _sf_pre_init
           plx
           jsr   _popay
           phx
+	  php  ; really required?
           cpy   #$00
           beq   do_null           ; ignore nulls
           lda   ESCMODE
@@ -148,7 +153,8 @@ table:    .addr _sf_pre_init
 table:    .addr _mode0            ; no ESC sequence in progress
           .addr _mode1            ; ESC but no [ yet
           .addr _mode2            ; ESC[ in progress
-do_null:  plx
+do_null:  plp  ; really reqiured?
+	  plx
           jmp   _sf_success
 .endproc
 
@@ -158,7 +164,8 @@ do_null:  plx
           inc   ESCMODE
           bra   done
 :         jsr   _con_write
-done:     plx
+done:     plp
+	  plx
           jmp   _sf_success
 .endproc
 
@@ -178,13 +185,14 @@ done:     plx
 :		stz   ESCPn, x
 		inx
 		inx
-		dec
+		;dec			; WTF? po co ja to tu?
 		cpx   #32
 		bcc   :-
 		lda   #4		; four digits, at 0 we set ESCACC to 9999, at -1 we do nothing
 		sta   NUMCOUNT		; max parameter valuer - four digits
 		inc   ESCMODE           ; sequence started!
-done:     	plx
+done:     	plp
+		plx
 		jmp   _sf_success
 .endproc
 
@@ -196,12 +204,11 @@ done:     	plx
 		bne   :+
 
 		ldx   ESCNUM		; how many p1;p2;p3;pn parameters?
-		cpx   #32		; max 16 (16*2)? - iggore following
+		cpx   #32		; max 16 (16*2)? - ignore following
 		bcs   done
 
 		lda   ESCACC            ; move ACC to EXCPn if ;
 		sta   ESCPn, x
-		stz   ESCACC
 		inx
 		inx
 		stx   ESCNUM
@@ -243,10 +250,11 @@ elp:      	lsr   MNUM2
 		dec   NUMCOUNT
 		bra   done
 
-:         	tya                     ; not a digit, try letter codes
+:		nop
 		ldx   ESCNUM
                 lda   ESCACC
                 sta   ESCPn, x          ; save accumulator on parameter list
+		tya                     ; not a digit, try letter codes
 
 		sec
 		sbc   #'@'
@@ -257,12 +265,18 @@ elp:      	lsr   MNUM2
 		bmi   endesc
 		cmp   #$1B
 		bcc   lower             ; lower case codes
-endesc:		stz   ESCMODE
-done:		plx
+endesc:		nop                     ; zbedne?
+		.a16			; zbedne?
+		.i16                    ; zbedne?
+		stz   ESCMODE
+		sta ESCDIAG
+done:		plp
+		plx
 		jmp   _sf_success
 none:		rts
 upper:		asl
 		tax
+		stx ESCDIAG
 		jsr   (.LOWORD(utable),x)
 		bra   endesc
 utable:   .addr none              ; @ insert char
@@ -294,6 +308,7 @@ utable:   .addr none              ; @ insert char
           .addr none              ; Z
 lower:    asl
           tax
+	stx ESCDIAG
           jsr   (.LOWORD(ltable),x)
           bra   endesc
 ltable:   .addr none              ; `
@@ -309,7 +324,7 @@ ltable:   .addr none              ; `
           .addr none              ; j
           .addr none              ; k
           .addr none              ; l
-          .addr none              ; m set graphic rendition
+          .addr sgr               ; m set graphic rendition
           .addr none              ; n device status report (requires input buffer)
           .addr none              ; o
           .addr none              ; p normal screen (optional)
@@ -324,10 +339,70 @@ ltable:   .addr none              ; `
           .addr none              ; y
           .addr none              ; z
 
-	  .a16
-	  .i16
 .endproc
 
+
+; set graphic rendition
+; very naive test routine
+sgr:		nop
+		lda #$aa
+		sta ESCDIAG
+		rep   #SHORT_A
+		.a16
+		lda ESCPn
+		cmp #30
+		bcc sgr_exit	; if less than 30
+		cmp #38
+		bcc setfgcolor1  ; between 30 and 37, normal fg color
+
+		cmp #90
+		bcc sgr_exit	; if less than 90 and gt than 37
+		cmp #98
+		bcc setfgcolor2  ; between 90 and 97, bright fg color
+
+		lda #$ff
+		sta ESCDIAG
+                rts             ; not in rang 30-37 and 90-97, ignore
+
+
+sgr_exit:	nop
+		lda #$fe
+		sta ESCDIAG
+		rts
+
+setfgcolor1:	nop		; we assume normal mode
+		sep   #SHORT_A
+		.a8		; color in C256 is defined by 1 byte (lo and hi for fg and bg)
+                sec
+		sbc #30
+		sta ESCDIAG
+		bra setfgcolor
+
+setfgcolor2:	nop		; we assume normal mode
+		sep   #SHORT_A
+		.a8		; color in C256 is defined by 1 byte (lo and hi for fg and bg)
+                sec
+		sbc #90
+		sta ESCDIAG
+
+; very crude
+setfgcolor:	nop
+		;rts
+		xba		; preserve low A in high A
+		lda f:$00001E	; CURCOLOR
+		and #$0f	; preserve background bits
+		sta f:$00001E
+		xba		; restore low A
+		asl		; move left
+		asl
+		asl
+		asl
+		ora f:$00001E
+		sta f:$00001E
+		sta ESCDIAG
+		rep  #SHORT_A
+		.a16
+		rts
 
 ; -----------------------------------------------------------------------
 

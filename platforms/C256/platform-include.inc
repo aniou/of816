@@ -1,11 +1,18 @@
 ;
-ESCMODE  = DP_END             ; ESC mode for OF terminal emu
+;CURSORPOS= DP_END			; cursor position in memory, next char goes here
+;COLORPOS = CURPOS+3			; position in color memory
+;CURCOLOR = COLORPOS+3		; fore and background colors (4/4 bits)
+
+
+ESCMODE  = DP_END
+; ESC mode for OF terminal emu
 ESCACC   = ESCMODE+2          ; accumulator for OF terminal emu
 MNUM2    = ESCACC+2           ; factor for converting numbers
-ESCNUM   = MNUM2+2             ; parameter number (0-15)
+ESCNUM   = MNUM2+2            ; parameter number (0-15) doubled by factor 2
 NUMCOUNT = ESCNUM+2           ; digit number in Pn
 ESCPn    = NUMCOUNT+2         ; 32 bytes for 16 P parameter numbers
-ESCEND   = ESCPn+32
+ESCDIAG  = ESCPn+32           ; 2 bytes for testing
+ESCEND   = ESCDIAG+2
 
 
 ; VT510 Video Terminal Programmer Information
