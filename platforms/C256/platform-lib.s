@@ -82,11 +82,63 @@ table:    .addr _sf_pre_init
 
 
 .proc     _sf_pre_init
+		plx
+		jmp   _sf_success     ; assume WDC monitor already did it
+.endproc
+
+.proc     _sf_pre_init_bad
 		stz ESCMODE
 		stz ESCACC
 		stz ESCDIAG
+
+		sep   #SHORT_A
+		.a8
+
+		; init text-mode lut table
+		ldx #0
+:		lda .loword(text_color_lut),x
+		sta $AF1F40,x		; FG_CHAR_LUT_PTR
+		sta $AF1F80,x		; BG_CHAR_LUT_PTR
+		inx
+		cpx #$40
+		bne :-
+
+		; set new default color
+		lda #$78
+		sta f:$00001E		; CURCOLOR
+
+		; update screen color
+		ldx #$00
+:		sta $AFC000,x		; CS_COLOR_MEM_PTR
+		inx
+		cpx #$2000
+		bne :-
+
+		rep   #SHORT_A
+		.a16
 		plx
 		jmp   _sf_success     ; assume WDC monitor already did it
+
+
+;                       B    G    R  alpha
+text_color_lut: .byte   0,   0,   0, 255  ; black
+                .byte   0,   0, 205, 255  ; red
+                .byte   0, 205,   0, 255  ; green
+                .byte   0, 205, 205, 255  ; yellow
+                .byte 238,   0,   0, 255  ; blue
+                .byte 205,   0, 205, 255  ; magenta
+                .byte 205, 205,   0, 255  ; cyan
+                .byte  64,  64,  64, 255  ; white
+
+                .byte  16,  16,  16, 255  ; bright black
+                .byte   0,   0, 255, 255  ; bright red
+                .byte   0, 255,   0, 255  ; bright green
+                .byte   0, 255, 255, 255  ; bright yellow
+                .byte 255,  92,  92, 255  ; bright blye
+                .byte 255,   0, 255, 255  ; bright magenta
+                .byte 255, 255,   0, 255  ; bright cyan
+                .byte 170, 170, 170, 255  ; bright white
+
 .endproc
 
 
@@ -97,7 +149,7 @@ table:    .addr _sf_pre_init
 
 ; -----------------------------------------------------------------------
 
-.proc     _sf_emit_good
+.proc     _sf_emit
           plx
           jsr   _popay
           phx
@@ -110,6 +162,7 @@ table:    .addr _sf_pre_init
           jsl $001018       ; PUTCH kernel function, XXX - change to symbolic name
 
           plp
+		rep   #SHORT_A|SHORT_I
           .a16
           .i16
           plx
@@ -136,7 +189,7 @@ table:    .addr _sf_pre_init
 ; -----------------------------------------------------------------------
 ; kind of sketch
 
-.proc     _sf_emit
+.proc     _sf_emit_bad
           ; we don't need these, we work with D set to 9100
           ;phk                     ; ensure we are working with bank 0
           ;plb
