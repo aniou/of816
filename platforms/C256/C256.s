@@ -27,9 +27,9 @@
 
           lda   #$1000            ; relative to direct page, top is the address immediately after the first usable cell.
           pha
-          lda   #$0204            ; relative to direct page, The Bottom value is the address of the last usable cell
+          lda   #$0104            ; relative to direct page, The Bottom value is the address of the last usable cell
           pha
-          lda   #$01ef            ; return stack first usable byte // XXX - NOT relative do DP?
+          lda   #$afff            ; return stack first usable byte // XXX - NOT relative do DP?
           pha
           lda   #.hiword(_system_interface)
           pha
