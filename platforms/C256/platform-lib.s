@@ -44,9 +44,6 @@
 ;       The system will trust that there is FCode there and not look for a signature.
 ; $0006 ( -- ) perform RESET-ALL, restart the system as if reset button was pushed
 
-
-PLATFORM_INCLUDE "platform-include.inc"
-
 cpu_clk   = 14318000
 
 .proc     _system_interface
@@ -82,8 +79,6 @@ table:    .addr _sf_pre_init
 
 
 .proc     _sf_pre_init
-	  stz ESCMODE
-	  stz ESCACC
           plx
           jmp   _sf_success     ; assume WDC monitor already did it
 .endproc
@@ -94,9 +89,7 @@ table:    .addr _sf_pre_init
           jmp   _sf_success
 .endproc
 
-; -----------------------------------------------------------------------
-
-.proc     _sf_emit_old
+.proc     _sf_emit
           plx
           jsr   _popay
           phx
@@ -115,225 +108,9 @@ table:    .addr _sf_pre_init
           jmp   _sf_success
 .endproc
 
-; -----------------------------------------------------------------------
-; new version of _sf_emit, based on IIgs platform
-
-.proc     _con_write
-		php
-		sep   #SHORT_A|SHORT_I
-		.a8
-		.i8
-		tya
-		jsl $001018       ; PUTCH kernel function, XXX - change to symbolic name
-		plp
-          	rep   #SHORT_A|SHORT_I
-                .a16
-                .i16
-		rts
-.endproc
-
-.proc     _sf_emit
-          ; we don't need these, we work with D set to 9100
-          ;phk                     ; ensure we are working with bank 0
-          ;plb
-          plx
-          jsr   _popay
-          phx
-          cpy   #$00
-          beq   do_null           ; ignore nulls
-          lda   ESCMODE
-          asl
-          tax
-          jmp   (.LOWORD(table),x)
-table:    .addr _mode0            ; no ESC sequence in progress
-          .addr _mode1            ; ESC but no [ yet
-          .addr _mode2            ; ESC[ in progress
-do_null:  plx
-          jmp   _sf_success
-.endproc
-
-.proc     _mode0
-          cpy   #$1B              ; ESC
-          bne   :+
-          inc   ESCMODE
-          bra   done
-:         jsr   _con_write
-done:     plx
-          jmp   _sf_success
-.endproc
-
-.proc     _mode1
-		cpy   #'['              ; second char in sequence?
-		beq   :+                ; yes, change modes
-		stz   ESCMODE           ; otherwise back to mode 0
-		phy
-		ldy   #$1B
-		jsr   _con_write        ; output the ESC we ate
-		ply
-		jsr   _con_write        ; and output this char
-		bra   done
-:         	stz   ESCACC
-		stz   ESCNUM
-		ldx   #0		; clear all Pn (16)
-:		stz   ESCPn, x
-		inx
-		inx
-		dec
-		cpx   #32
-		bcc   :-
-		lda   #4		; four digits, at 0 we set ESCACC to 9999, at -1 we do nothing
-		sta   NUMCOUNT		; max parameter valuer - four digits
-		inc   ESCMODE           ; sequence started!
-done:     	plx
-		jmp   _sf_success
-.endproc
-
-.proc     _mode2
-		cpy   #' '              ; ignore spaces in codes
-		beq   done
-
-		cpy   #';'
-		bne   :+
-
-		ldx   ESCNUM		; how many p1;p2;p3;pn parameters?
-		cpx   #32		; max 16 (16*2)? - iggore following
-		bcs   done
-
-		lda   ESCACC            ; move ACC to EXCPn if ;
-		sta   ESCPn, x
-		stz   ESCACC
-		inx
-		inx
-		stx   ESCNUM
-		lda   #4		; reset number of valid
-		sta   NUMCOUNT
-                stz   ESCACC
-		bra   done
-
-:		lda   NUMCOUNT		; how many digits was processed?
-                bmi   done              ; -1? then default max value was already set
-		bne   :+
-                lda   #9999		; if there is a fifth number then max should be set
-                sta   ESCACC
-		dec   NUMCOUNT		; but only one time, we use -1 to mark this
-		bra   done		;
-
-:		tya
-		sec
-		sbc   #$30
-		bmi   endesc            ; eat it and end ESC mode if invalid
-		cmp   #$0a
-		bcs   :+                ; try letters if not a digit
-		tay                     ; a digit, accumulate it into ESCACC
-		lda   #10               ; multiply current ESCACC by 10
-		sta   MNUM2
-		lda   #$0000            ; initialize result
-		beq   elp
-do_add:   	clc
-		adc   ESCACC
-lp:       	asl   ESCACC
-elp:      	lsr   MNUM2
-		bcs   do_add
-		bne   lp
-		sta   ESCACC            ; now add the current digit
-		tya
-		clc
-		adc   ESCACC
-		sta   ESCACC
-		dec   NUMCOUNT
-		bra   done
-
-:         	tya                     ; not a digit, try letter codes
-		ldx   ESCNUM
-                lda   ESCACC
-                sta   ESCPn, x          ; save accumulator on parameter list
-
-		sec
-		sbc   #'@'
-		bmi   endesc
-		cmp   #$1B              ; ctrl+Z
-		bcc   upper             ; upper case code
-		sbc   #$20              ; convert lower case to 00-1A
-		bmi   endesc
-		cmp   #$1B
-		bcc   lower             ; lower case codes
-endesc:		stz   ESCMODE
-done:		plx
-		jmp   _sf_success
-none:		rts
-upper:		asl
-		tax
-		jsr   (.LOWORD(utable),x)
-		bra   endesc
-utable:   .addr none              ; @ insert char
-          .addr none              ; A cursor up
-          .addr none              ; B cursor down
-          .addr none              ; C cursor forward
-          .addr none              ; D cursor backward
-          .addr none              ; E cursor next line
-          .addr none              ; F cursor previous line
-          .addr none              ; G cursor horizontal absolute
-          .addr none              ; H cursor position
-          .addr none              ; I
-          .addr none              ; J erase display
-          .addr none              ; K erase line
-          .addr none              ; L insert lines
-          .addr none              ; M delete lines
-          .addr none              ; N
-          .addr none              ; O
-          .addr none              ; P delete char
-          .addr none              ; Q
-          .addr none              ; R
-          .addr none              ; S scroll up
-          .addr none              ; T scroll down
-          .addr none              ; U
-          .addr none              ; V
-          .addr none              ; W
-          .addr none              ; X
-          .addr none              ; Y
-          .addr none              ; Z
-lower:    asl
-          tax
-          jsr   (.LOWORD(ltable),x)
-          bra   endesc
-ltable:   .addr none              ; `
-          .addr none              ; a
-          .addr none              ; b
-          .addr none              ; c
-          .addr none              ; d
-          .addr none              ; e
-          .addr none              ; f cursor position
-          .addr none              ; g
-          .addr none              ; h
-          .addr none              ; i
-          .addr none              ; j
-          .addr none              ; k
-          .addr none              ; l
-          .addr none              ; m set graphic rendition
-          .addr none              ; n device status report (requires input buffer)
-          .addr none              ; o
-          .addr none              ; p normal screen (optional)
-          .addr none              ; q invert screen (optional)
-          .addr none              ; r
-          .addr none              ; s reset screen (optional)
-          .addr none              ; t
-          .addr none              ; u
-          .addr none              ; v
-          .addr none              ; w
-          .addr none              ; x
-          .addr none              ; y
-          .addr none              ; z
-
-	  .a16
-	  .i16
-.endproc
-
-
-; -----------------------------------------------------------------------
-
 ; crude try - there is no 'wait for key' function so far
 ;
-;.384328 a6 8b       ldx $0f8b   check_buffer    LDX KEY_BUFFER_RPOS     ; Is KEY_BUFFER_RPOS < KEY_BUFFER_WPOS
+;.384328   a6 8b       ldx $0f8b   check_buffer    LDX KEY_BUFFER_RPOS     ; Is KEY_BUFFER_RPOS < KEY_BUFFER_WPOS
 ;.38432a e4 8d       cpx $0f8d                   CPX KEY_BUFFER_WPOS
 ;.38432c 90 02       bcc $384330                 BCC read_buff           ; Yes: a key is present, read it
 ;.38432e 80 e4       bra $384314                 BRA get_wait            ; Otherwise, keep waiting
