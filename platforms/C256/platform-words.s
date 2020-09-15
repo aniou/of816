@@ -6,42 +6,6 @@ dword     dCPU_HZ,"$CPU_HZ"
 eword
 
 ; ---------------------------------------------------------------------
-; for testing ANSI sequences
-
-dword	T1,"T1"
-	ENTER
-	ONLIT 'C'
-	ONLIT 'B'
-	ONLIT 'A'
-	ONLIT $6d	; m
-	ONLIT $35	; 5
-	ONLIT $33       ; 3
-	ONLIT '['
-	ONLIT $1B       ; ESC
-	.dword EMIT
-	.dword EMIT
-	.dword EMIT
-	.dword EMIT
-	.dword EMIT
-	.dword EMIT
-	.dword EMIT
-	.dword EMIT
-	.dword CR
-	EXIT
-eword
-
-dword T2, "T2"
-	ENTER
-	.dword T1
-	NLIT $9000
-	NLIT $80
-	.dword DUMP
-	.dword CR
-	EXIT
-eword
-
-
-; ---------------------------------------------------------------------
 ;
 ;
 
