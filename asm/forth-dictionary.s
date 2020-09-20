@@ -1709,9 +1709,7 @@ hword     RPICK,"RPICK"
           ldy   #$02
           lda   [WR],y
           pha
-          dey
-          dey
-          lda   [WR],y
+          lda   [WR]
           tay
           pla
           NEXT
@@ -3376,7 +3374,7 @@ eword
 
 ; H: ( d n1 -- n2 n3 ) Floored divide d by n1, giving quotient n3 and remainder n2.
 dword     FMDIVMOD,"FM/MOD"
-          .if 0 ; primitive, using math lib FM/MOD code based on SM/REM
+          .if 1 ; primitive, using math lib FM/MOD code
           jsr   _3parm
           lda   STACKBASE+0,x
           ora   STACKBASE+2,x
@@ -3384,6 +3382,34 @@ dword     FMDIVMOD,"FM/MOD"
           jsr   _fmdivmod
           bcs   _overflow
           NEXT
+          .elseif 1 ; secondary, using UM/MOD
+          ENTER
+          .dword DUP
+          .dword PtoR
+          .dword DUP
+          .dword ZEROLT
+          .dword _IF
+          .dword :+
+          .dword NEGATE
+          .dword PtoR
+          .dword DNEGATE
+          .dword RtoP
+:         .dword PtoR
+          .dword DUP
+          .dword ZEROLT
+          .dword RCOPY
+          .dword LAND
+          .dword PLUS
+          .dword RtoP
+          .dword UMDIVMOD
+          .dword RtoP
+          .dword ZEROLT
+          .dword _IF
+          .dword :+
+          .dword SWAP
+          .dword NEGATE
+          .dword SWAP
+:         EXIT
           .else ; secondary, using SM/REM
           ENTER
           .dword DUP
@@ -4718,16 +4744,14 @@ eword
 
 ; ( c-addr u wid -- xt ) Search wordlist wid for word.
 hword     dWLSEARCH,"$WLSEARCH"
-          jsr   _popwr
+          jsr   _popwr            ; wid -> WR
           ldy   #$02
-          lda   [WR],y
-          sta   YR+2
-          dey
-          dey
-          lda   [WR],y
+          lda   [WR],y            ; LAST of wordlist at wid, high word
+          sta   YR+2              ; to YR
+          lda   [WR]              ; now low word
           sta   YR
-          jsr   _popxr
-          jsr   _popwr
+          jsr   _popxr            ; u -> XR
+          jsr   _popwr            ; c-addr -> WR
           jsr   _search_unsmudged
           PUSHNEXT
 eword
@@ -4739,14 +4763,14 @@ dword     SEARCH_WORDLIST,"SEARCH-WORDLIST"
 hword     SEARCH_WORDLIST,"SEARCH-WORDLIST"
 .endif
           ENTER
-          .dword dWLSEARCH
-          .dword DUP
-          .dword _IF
-          .dword notfound
-          .dword IMMEDQ
-          ONLIT 1
-          .dword LOR
-          .dword NEGATE
+          .dword dWLSEARCH        ; ( c-addr u wid -- 0 | xt )
+          .dword DUP              ; ( 0 | xt -- 0 0 | xt  xt )
+          .dword _IF              ; ( 0 0 | xt  xt - 0 | xt )
+          .dword notfound         ; ( 0 ) if taken
+          .dword IMMEDQ           ; ( xt -- xt f )
+          .dword ONE              ; ( xt f -- xt f 1 )
+          .dword LOR              ; ( ... xt 1/-1 )
+          .dword NEGATE           ; ( ... xt -1/1 )
 notfound: EXIT
 eword
 
@@ -6547,22 +6571,22 @@ dword     BACKSLASH,"\",F_IMMED
           .dword SOURCEID
           .dword _IF
           .dword term             ; faster
-          ONLIT 0                 ; something to drop...
+          .dword ZERO
 lp:       .dword DROP
           .dword INQ
           .dword _IF
-          .dword done
+          .dword done             ; whole enchilada has been eaten
           .dword GETCH
           .dword DUP
           ONLIT c_cr
           .dword EQUAL
           .dword _IFFALSE
-          .dword ddone            ; if true (= CR)
+          .dword ddone            ; taken if = CR
           .dword DUP
           ONLIT c_lf
           .dword EQUAL
           .dword _IF
-          .dword lp               ; if false (<> LF)
+          .dword lp               ; taken if <> LF
 ddone:    .dword DROP
 done:     EXIT
 term:     .dword NIN
@@ -6803,7 +6827,7 @@ eword
 dword     EVALUATE,"EVALUATE"
           ENTER
           .dword SAVEINPUT
-          .dword XNPtoR            ; throw it all on the return stack
+          .dword XNPtoR           ; throw it all on the return stack
           .dword PtoR             ; along with the count
           ONLIT -1
           .dword dSOURCEID        ; standard requires source-id to be -1 during EVALUATE
