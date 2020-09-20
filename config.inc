@@ -80,5 +80,5 @@ PLATFORM_INCLUDE "platform-config.inc"
 .if trace
   .define no_headerless 1
 .else
-  .define no_headerless 0 ; set to 1 to compile headers for all words for debugging
+  .define no_headerless 1 ; set to 1 to compile headers for all words for debugging
 .endif
