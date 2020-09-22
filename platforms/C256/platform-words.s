@@ -235,5 +235,13 @@ dword     LW,"LW"
           EXIT
 :         PLATFORM_INCBIN "fcode/xmodem.fc"
 eword
+dword     LA,"LA"
+          ENTER
+          ONLIT :+
+          .dword ONE
+          .dword BYTE_LOAD
+          EXIT
+:         PLATFORM_INCBIN "fcode/ansi.fc"
+eword
 .endif
 
