@@ -11,8 +11,8 @@
 .proc     startup
           clc
           xce
-          rep   #SHORT_A|SHORT_I
 
+          setaxl
           lda   #$9000
           tcd                       ; direct page for forth
 
