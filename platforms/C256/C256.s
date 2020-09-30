@@ -12,7 +12,7 @@
           clc
           xce
 
-          setaxl
+          rep   #SHORT_A|SHORT_I
           lda   #$9000
           tcd                       ; direct page for forth
 
