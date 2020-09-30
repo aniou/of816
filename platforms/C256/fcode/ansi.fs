@@ -9,6 +9,13 @@ start1
 
 external
 
+: tafg0
+  " normal:"(20 1B)[30mblack"
+  type
+  CR
+;
+  
+
 : tafg1
   " normal:"(20 1B)[30mblack"
   type
