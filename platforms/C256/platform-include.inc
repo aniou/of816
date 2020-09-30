@@ -11,10 +11,10 @@ MNUM2    = ESCACC+2           ; factor for converting numbers
 ;ESCDIAG  = ESCPn+32           ; 2 bytes for diagnostic
 ;ESCEND   = ESCDIAG+2
 
-ESCNUM   = $B0
+ESCNUM   = $B0                ; parameters count, doubled by 2 - aligned for better debug
 NUMCOUNT = ESCNUM+2           ; digit number in Pn
-ESCPn    = $C0
-ESCDIAG  = $E0
+ESCPn    = $C0                ; 32 bytes for 16 P parameter numbers
+ESCDIAG  = $E0                ; 2 bytes, aligned for better visibility
 
 ; Constants
 DEF_FG     = $07
