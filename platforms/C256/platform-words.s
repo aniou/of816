@@ -1,6 +1,25 @@
 ; Platform support dictionary words for C256 FOENIX FMX
 ;
 
+
+
+; ---------------------------------------------------------------------
+; experimental words for ANSI support, as long FoenixIDE has bugs...
+
+.FEATURE STRING_ESCAPES
+
+dword     X1,"X1"
+          ENTER
+          SLIT "normal:\"(20 1B)[30mblack"
+          .dword TYPE
+          .dword CR
+          EXIT
+eword
+
+
+; ---------------------------------------------------------------------
+
+
 dword     dCPU_HZ,"$CPU_HZ"
           FCONSTANT cpu_clk
 eword
