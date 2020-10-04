@@ -7,7 +7,9 @@ The port itself relies on default [FMX Kernel](https://github.com/Trinity-11/Ker
 but replaces included [BASIC](https://github.com/pweingar/BASIC816) 
 
 It works in [Foenix IDE](https://github.com/Trinity-11/FoenixIDE) from
-sersion 0.5.2.2, see below for instructions.
+sersion 0.5.2.2, see below for instructions. Warning: I found issue
+during interpreting fcode, so there is - probably - one more bug left,
+but, generally, interpreter should work on emulator.
 
 It will be possible to run current, unmodified version of this port on 
 [go65c816 emulator](https://github.com/aniou/go65c816)  in near future 
