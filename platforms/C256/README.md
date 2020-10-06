@@ -8,7 +8,7 @@ but replaces included [BASIC](https://github.com/pweingar/BASIC816)
 
 It works in [Foenix IDE](https://github.com/Trinity-11/FoenixIDE) from
 sersion [0.5.3.1](https://github.com/Trinity-11/FoenixIDE/releases), 
-see [below](On-FoenixIDE) for instructions. 
+see [below](#on-foenixide) for instructions. 
 
 It will be possible to run current, unmodified version of this port on 
 [go65c816 emulator](https://github.com/aniou/go65c816)  in near future 
