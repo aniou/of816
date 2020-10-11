@@ -232,7 +232,7 @@ done:       plp
             jsr   _con_write          ; and output this char
             bra   done
 :           stz   ESCACC
-            stz   ESCNUM              ; 0 means 'no parameters', rest is counted from 1 (i.e. from 2)
+            stz   ESCNUM              ; clear number of parameters
             ldx   #0                  ; clear all Pn (16)
 :           stz   ESCPn, x
             inx
@@ -240,7 +240,7 @@ done:       plp
             cpx   #32
             bcc   :-
             lda   #4                  ; four digits, at 0 we set ESCACC to 9999, at -1 we do nothing
-            sta   NUMCOUNT            ; max parameter valuer - four digits
+            sta   NUMCOUNT            ; max parameter value - four digits
             inc   ESCMODE             ; sequence started!
 done:       plp
             plx
@@ -379,11 +379,11 @@ ltable:     .addr none              ; `
 store_pn:   nop                     ; store parameter
 
             ldx   ESCNUM            ; how many p1;p2;p3;pn parameters?
-            cpx   #32               ; max 16 (16*2), started from 2? - ignore following
+            cpx   #32               ; max 16 (16*2)? - ignore following
             bcs   store1
 
-:           lda   ESCACC            ; move ACC to EXCPn if ;
-            sta   ESCPn, x          ; because x == 2 means 'first parameter'
+:           lda   ESCACC            ; move ACC to EXCPn if
+            sta   ESCPn, x
             inx
             inx
             stx   ESCNUM
@@ -415,12 +415,11 @@ sgr:        nop
             ;wdm   10
             ;rts
             setal
-            lda   ESCNUM          ; CSI m   - means reset
-            ;beq   reset           ; 0 means 'no parameters', thus - reset - at this moment there is no posiibility to have 0
-            ;inc                   ; it is not elegant - because counter
-            ;inc                   ; is checked after session we need a number of parameters+1
-            ;sta   ESCNUM          ; to convinient check with cmp (C set when equal or greater)
-
+            ; at this moment cases like CSI 0 m and CSI m are treated in the same way
+            ; - ESCACC is zeroed at beginning and move to ESCPn when letter code is
+            ; found, thus 0m has the same effect that już m
+            ; only side-effect comes when there is difference betwen single parameter
+            ; '0' and 'no parameters', but it is not a case for SGR support
             ldx   #$00            ; we go through params up to ESCNUM, 02 means 'first parameter'
 sgr0:       lda   ESCPn, x
             beq   reset           ; CSI 0 m - also reset
