@@ -14,6 +14,13 @@ It will be possible to run current, unmodified version of this port on
 [go65c816 emulator](https://github.com/aniou/go65c816)  in near future 
 (code and instructions will be published soon).
 
+## Latest changes
+
+* 2020-10-11: foundations for ANSI codes support and working 3/4 bit SGR code
+
+![ANSI SGR support](doc/ansi-colors-ide-1.png)
+
+
 ## Compiling
 
 Port requires following utilities to be in `$PATH` to compile:
