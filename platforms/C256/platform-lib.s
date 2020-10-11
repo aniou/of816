@@ -155,7 +155,7 @@ text_color_lut:  ;  B    G    R  alpha (not used for text?)
 
 ; ---------------------------------------------------------------------
 ;
-.proc       _sf_emit
+.proc       _sf_emit_old
             plx
             jsr   _popay
             phx
@@ -191,7 +191,7 @@ text_color_lut:  ;  B    G    R  alpha (not used for text?)
 
 ; ---------------------------------------------------------------------
 ;
-.proc       _sf_emit_not_ready_yet
+.proc       _sf_emit
             plx
             jsr   _popay
             phx
@@ -232,7 +232,7 @@ done:       plp
             jsr   _con_write          ; and output this char
             bra   done
 :           stz   ESCACC
-            stz   ESCNUM
+            stz   ESCNUM              ; 0 means 'no parameters', rest is counted from 1 (i.e. from 2)
             ldx   #0                  ; clear all Pn (16)
 :           stz   ESCPn, x
             inx
@@ -248,24 +248,14 @@ done:       plp
 .endproc
 
 .proc     _mode2
+            ;wdm   10
             cpy   #' '                ; ignore spaces in codes
             beq   done
 
             cpy   #';'
             bne   :+
 
-            ldx   ESCNUM              ; how many p1;p2;p3;pn parameters?
-            cpx   #32                 ; max 16 (16*2)? - ignore following
-            bcs   done
-
-            lda   ESCACC              ; move ACC to EXCPn if ;
-            sta   ESCPn, x
-            inx
-            inx
-            stx   ESCNUM
-            lda   #4                  ; reset number of valid
-            sta   NUMCOUNT
-            stz   ESCACC
+            jsr   store_pn            ; save acc to parameter and reset vars
             bra   done
 
 :           lda   NUMCOUNT            ; how many digits was processed?
@@ -302,10 +292,8 @@ elp:        lsr   MNUM2
             bra   done
 
 :           nop
-            ldx   ESCNUM
-            lda   ESCACC
-            sta   ESCPn, x            ; save accumulator on parameter list
-            tya                       ; not a digit, try letter codes
+            jsr   store_pn            ; not a digit, store ACC in Pn and...
+            tya                       ;              try letter codes
 
             sec
             sbc   #'@'
@@ -387,6 +375,24 @@ ltable:     .addr none              ; `
             .addr none              ; y
             .addr none              ; z
 
+
+store_pn:   nop                     ; store parameter
+
+            ldx   ESCNUM            ; how many p1;p2;p3;pn parameters?
+            cpx   #32               ; max 16 (16*2), started from 2? - ignore following
+            bcs   store1
+
+:           lda   ESCACC            ; move ACC to EXCPn if ;
+            sta   ESCPn, x          ; because x == 2 means 'first parameter'
+            inx
+            inx
+            stx   ESCNUM
+
+store1:     stz   ESCACC
+            lda   #4                ; reset number of valid
+            sta   NUMCOUNT
+            rts
+
 .endproc
 
 
@@ -406,16 +412,18 @@ ltable:     .addr none              ; `
 
 
 sgr:        nop
-            rts
+            ;wdm   10
+            ;rts
             setal
-            ldx   #00             ; we go through params up to ESCNUM
             lda   ESCNUM          ; CSI m   - means reset
-            sta   ESCDIAG
-            rts
-            beq   reset
+            ;beq   reset           ; 0 means 'no parameters', thus - reset - at this moment there is no posiibility to have 0
+            ;inc                   ; it is not elegant - because counter
+            ;inc                   ; is checked after session we need a number of parameters+1
+            ;sta   ESCNUM          ; to convinient check with cmp (C set when equal or greater)
 
+            ldx   #$00            ; we go through params up to ESCNUM, 02 means 'first parameter'
 sgr0:       lda   ESCPn, x
-            beq   reset           ;  CSI 0 m - also reset
+            beq   reset           ; CSI 0 m - also reset
 
             cmp   #30
             bcc   next_parm       ; if less than 30
@@ -460,14 +468,15 @@ sgr0:       lda   ESCPn, x
             bra   set_bg
 
 next_parm:  inx
-            inx
-            cpx   ESCNUM          ; ESCNUM is equal to params num+2
+            inx                   ; jesli zaczynamy od braku parametrof (feff to tu jest zero i idzie w krzaki !!!)
+            cpx   ESCNUM          ; ESCNUM - to jest dokladnie liczba parametrow * 2 wiec musi byc wiecej
             bcc   sgr0
             rts                   ; END
 
 reset:      setas
+            ;wdm   10
             lda   #DEF_COLORS
-            sta   C256_CURCOLOR
+            sta   f:C256_CURCOLOR
             setal
             bra   next_parm       ; end or return to params
 
