@@ -9,15 +9,64 @@ start1
 
 external
 
-: tafg0
-  " normal:"(20 1B)[30mblack"
+: ta00
+  " reset by 0m"(20 1B)[0m"
   type
   CR
 ;
-  
+
+: ta01
+  " reset by m"(20 1B)[m"
+  type
+  CR
+;
+
+: tabg1
+  " normal bg:"(20 1B)[40mblack"
+  type
+  " "(20 1B)[41mred"
+  type
+  " "(20 1B)[42mgreen"
+  type
+  " "(20 1B)[43myellow"
+  type
+  " "(20 1B)[44mblue"
+  type
+  " "(20 1B)[45mmagenta"
+  type
+  " "(20 1B)[46mcyan"
+  type
+  " "(20 1B)[47;30mwhite"
+  type
+  " "(20 1B)[0m"
+  type
+  CR
+;
+
+: tabg2
+  " bright bg:"(20 1B)[100mblack"
+  type
+  " "(20 1B)[101mred"
+  type
+  " "(20 1B)[102mgreen"
+  type
+  " "(20 1B)[103myellow"
+  type
+  " "(20 1B)[104mblue"
+  type
+  " "(20 1B)[105mmagenta"
+  type
+  " "(20 1B)[106mcyan"
+  type
+  " "(20 1B)[107;30mwhite"
+  type
+  " "(20 1B)[0m"
+  type
+  CR
+;
 
 : tafg1
-  " normal:"(20 1B)[30mblack"
+  " normal fg:"(20 1B)[30mblack"
   type
   " "(20 1B)[31mred"
   type
@@ -31,13 +80,15 @@ external
   type
   " "(20 1B)[36mcyan"
   type
-  " "(20 1B)[37mwhite"(1B)[0m"
+  " "(20 1B)[37mwhite"
+  type
+  " "(20 1B)[0m"
   type
   CR
 ;
 
 : tafg2
-  " bright:"(20 1B)[90;30mblack"
+  " bright fg:"(20 1B)[90;40mblack"(1B)[0m"
   type
   " "(20 1B)[91mred"
   type
@@ -56,10 +107,10 @@ external
   CR
 ;
 
-: tafg
-  tafg1 tafg2
+: ta
+  tafg1 tafg2 tabg1 tabg2
 ;
 
-." end of ANSI code" cr
+." ANSI tests loaded" cr
 
 fcode-end
