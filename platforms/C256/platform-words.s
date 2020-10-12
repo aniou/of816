@@ -245,6 +245,8 @@ dword	UART_GETC,"UART-GETC"
 		NEXT
 eword
 
+; XXX - horrible and ugly, copy fcode scanne from original impl.
+
 .if include_fcode && romloader_as_word ; SXB stuff, should do different
 dword     LW,"LW"
           ENTER
@@ -261,6 +263,14 @@ dword     LA,"LA"
           .dword BYTE_LOAD
           EXIT
 :         PLATFORM_INCBIN "fcode/ansi.fc"
+eword
+dword     LE,"LE"
+          ENTER
+          ONLIT :+
+          .dword ONE
+          .dword BYTE_LOAD
+          EXIT
+:         PLATFORM_INCBIN "fcode/editor.fc"
 eword
 .endif
 
