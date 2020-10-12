@@ -22,6 +22,8 @@ DEF_BG     = $08
 DEF_COLORS = $78              ; "white" on "bright black", $78
 
 ; C256 addresses and vectors
+C256_COLS_VISIBLE     = $0F
+C256_LINES_VISIBLE    = $13
 C256_CURCOLOR         = $1E
 
 ; memory areas
@@ -32,6 +34,7 @@ C256_KEY_BUFFER_WPOS  = $0f8d
 C256_BOOT             = $1000
 C256_PUTCH            = $1018
 C256_GETCHW           = $104c
+C256_LOCATE           = $1084
 
 ; memory regions
 C256_FG_CHAR_LUT_PTR  = $AF1F40

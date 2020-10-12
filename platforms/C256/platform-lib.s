@@ -190,7 +190,19 @@ text_color_lut:  ;  B    G    R  alpha (not used for text?)
 .endproc
 
 ; ---------------------------------------------------------------------
+; "In the standard ECMA-48, which can be considered X3.64’s successor,
+; there is; a distinction between a parameter with an empty value
+; (representing the default ; value), and one that has the value zero.
+; There used to be a mode, ZDM (Zero Default Mode), in which the two
+; cases were treated identically, but that is now deprecated in the
+; fifth edition (1991)"
 ;
+; In following code there is a ZDM used - '0' means 'default', for
+; example '1', but it is depended from particular function
+; 'None' (for example 'CSI [m' ) also means 'default' and is achieved
+; by putting 0 into all P0..P15 words at start - and when nothing is
+; parsed then Pn variables still holds initial zeroes.
+
 .proc       _sf_emit
             plx
             jsr   _popay
@@ -395,7 +407,29 @@ store1:     stz   ESCACC
 
 .endproc
 
-.proc       cup
+.proc       cup                        ; CSI n ; m H (n - row from 1, m column from 1)
+            setaxl
+            lda   ESCPn                ; row, 0=default, default=1, 1=1 - but '1' means '0' in FMX Kernel
+            beq   :+
+            dec                        ; because LOCATE uses indexes from 0
+            cmp   f:C256_LINES_VISIBLE ; comparing with number of columns is convinient because C may be used >=
+            bcc   :+
+            lda   f:C256_LINES_VISIBLE
+            dec                        ; because number of visible cols = Y position + 1
+:           tay
+
+            lda   ESCPn+2
+            beq   :+
+            dec
+            cmp   f:C256_COLS_VISIBLE
+            bcc   :+
+            lda   f:C256_COLS_VISIBLE
+            dec
+:           tax
+
+            jsl   C256_LOCATE          ; ILOCATE preserves all register, I hope...
+            rts
+
 .endproc
 
 ; set graphic rendition
@@ -411,7 +445,6 @@ store1:     stz   ESCACC
 ;  49       - default background
 ;  90 -  97 - bright foreground color
 ; 100 - 107 - bright background color
-
 
 .proc       sgr
             ;wdm   10
