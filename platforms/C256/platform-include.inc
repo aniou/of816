@@ -24,6 +24,8 @@ DEF_COLORS = $78              ; "white" on "bright black", $78
 ; C256 addresses and vectors
 C256_COLS_VISIBLE     = $0F
 C256_LINES_VISIBLE    = $13
+C256_CURSORX          = $1A
+C256_CURSORY          = $1C
 C256_CURCOLOR         = $1E
 
 ; memory areas
@@ -39,6 +41,7 @@ C256_LOCATE           = $1084
 ; memory regions
 C256_FG_CHAR_LUT_PTR  = $AF1F40
 C256_BG_CHAR_LUT_PTR  = $AF1F80
+C256_CS_TEXT_MEM_PTR  = $AFA000
 C256_CS_COLOR_MEM_PTR = $AFC000
 
 ; eof

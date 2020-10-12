@@ -338,7 +338,7 @@ utable:     .addr none              ; @ insert char
             .addr none              ; G cursor horizontal absolute
             .addr cup               ; H cursor position
             .addr none              ; I
-            .addr none              ; J erase display
+            .addr ed                ; J erase display
             .addr none              ; K erase line
             .addr none              ; L insert lines
             .addr none              ; M delete lines
@@ -407,6 +407,12 @@ store1:     stz   ESCACC
 
 .endproc
 
+; ---------------------------------------------------------------------
+; 8.3.21 CUP - CURSOR POSITION
+;
+;   Pn1 - row    from 1
+;   Pn2 - column from 1
+
 .proc       cup                        ; CSI n ; m H (n - row from 1, m column from 1)
             setaxl
             lda   ESCPn                ; row, 0=default, default=1, 1=1 - but '1' means '0' in FMX Kernel
@@ -428,6 +434,97 @@ store1:     stz   ESCACC
 :           tax
 
             jsl   C256_LOCATE          ; ILOCATE preserves all register, I hope...
+            rts
+
+.endproc
+
+; ---------------------------------------------------------------------
+; 8.3.39 ED - ERASE IN PAGE
+;
+;   Ps
+;   0 - default, from cursor to end of screen
+;   1 -          from cursor to beginning of screen
+;   2 -          entire screen
+;   3 -          entire screen and scrollback buffer
+;
+; note: there is no support for ERASURE MODE (ERM)
+
+.proc       ed
+            setaxl
+            lda   ESCPn
+            beq   ed_0
+            dec
+            beq   ed_1
+            dec
+            beq   ed_2
+            dec
+            beq   ed_2            ; we do not have a scrollback
+            rts                   ; greater than 3? do nothing
+
+ed_0:       nop
+            lda   f:C256_CURSORY
+            asl
+            asl
+            asl
+            asl
+            asl
+            asl
+            asl
+            adc   f:C256_CURSORX
+            pha                   ; save copy for later use
+            tax
+            setas
+            lda   #$20
+:           sta   C256_CS_TEXT_MEM_PTR, x
+            inx
+            cpx   #$2000
+            bne   :-
+
+            plx                   ; restore saved position
+            lda   #DEF_COLORS
+:           sta   C256_CS_COLOR_MEM_PTR, x
+            inx
+            bne   :-
+            rts
+
+ed_1:       nop
+            lda   f:C256_CURSORY
+            asl
+            asl
+            asl
+            asl
+            asl
+            asl
+            asl
+            adc   f:C256_CURSORX
+            pha                   ; save copy for later use
+            tax
+            setas
+            lda   #$20
+:           sta   C256_CS_TEXT_MEM_PTR, x
+            dex
+            bpl   :-
+
+            plx                   ; restore saved position
+            lda   #DEF_COLORS
+:           sta   C256_CS_COLOR_MEM_PTR, x
+            dex
+            bpl   :-
+            rts
+
+
+ed_2:       setas
+            ldx   #$2000
+            lda   #$20            ; space
+:           sta   C256_CS_TEXT_MEM_PTR, x
+            dex
+            bpl   :-
+
+            ldx   #$2000
+            lda   #DEF_COLORS
+:           sta   C256_CS_COLOR_MEM_PTR, x
+            dex
+            bpl   :-
             rts
 
 .endproc

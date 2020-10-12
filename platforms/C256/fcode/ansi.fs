@@ -9,6 +9,37 @@ start1
 
 external
 
+: taed
+  "  "(1B)[J"
+  type
+;
+
+: taed0
+  "  "(1B)[0J"
+  type
+;
+
+: taed1
+  "  "(1B)[1J"
+  type
+;
+
+: taed2
+  "  "(1B)[2J"
+  type
+;
+
+: taed3
+  "  "(1B)[3J"
+  type
+;
+
+: taed4
+  "  "(1B)[4J"
+  type
+;
+
+
 : ta00
   " reset by 0m"(20 1B)[0m"
   type
