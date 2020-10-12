@@ -324,7 +324,7 @@ utable:     .addr none              ; @ insert char
             .addr none              ; E cursor next line
             .addr none              ; F cursor previous line
             .addr none              ; G cursor horizontal absolute
-            .addr none              ; H cursor position
+            .addr cup               ; H cursor position
             .addr none              ; I
             .addr none              ; J erase display
             .addr none              ; K erase line
@@ -382,7 +382,7 @@ store_pn:   nop                     ; store parameter
             cpx   #32               ; max 16 (16*2)? - ignore following
             bcs   store1
 
-:           lda   ESCACC            ; move ACC to EXCPn if
+            lda   ESCACC            ; move ACC to EXCPn if
             sta   ESCPn, x
             inx
             inx
@@ -395,6 +395,8 @@ store1:     stz   ESCACC
 
 .endproc
 
+.proc       cup
+.endproc
 
 ; set graphic rendition
 ; supported codes
@@ -411,7 +413,7 @@ store1:     stz   ESCACC
 ; 100 - 107 - bright background color
 
 
-sgr:        nop
+.proc       sgr
             ;wdm   10
             ;rts
             setal
@@ -506,7 +508,7 @@ set_bg:     setas
             sta   f:C256_CURCOLOR
             setal
             bra   next_parm
-
+.endproc
 
 ; crude try - there is no 'wait for key' function so far
 ;
