@@ -19,7 +19,7 @@ It will be possible to run current, unmodified version of this port on
 * 2020-10-13: CUP/ED sequences support - now words AT-XY and PAGE works!
 
   From now print routines silently skip over LF character - this is an
-  workaround for default C256 kernel treats CR like original Commodore 
+  workaround for default C256 kernel that treats CR like original Commodore 
   (line down and go to column 0) and LF as "one line down" that leads 
   to redundant empty lines. 
   
