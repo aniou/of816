@@ -31,8 +31,8 @@ It will be possible to run current, unmodified version of this port on
 
 * 2020-10-11: foundations for ANSI codes support and working 3/4 bit SGR code.
 
-  See [fcode/ansi.fs] for working examples and syntax for OpenFirmware hex
-  code support in strings.
+  See [fcode/ansi.fs](fcode/ansi.fs) for working examples and syntax for 
+  OpenFirmware hex code support in strings.
 
 ![ANSI SGR support](doc/ansi-colors-ide-1.png)
 
