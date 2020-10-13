@@ -227,7 +227,9 @@ do_null:    plp                     ; really reqiured?
             bne   :+
             inc   ESCMODE
             bra   done
-:           jsr   _con_write
+:           cpy   #$0a            ; crude hack - c256 mimic c65 and uses cr only
+            beq   done            ; LF is interpreted as extra line down. XXX - make 'cr_mode'
+            jsr   _con_write
 done:       plp
             plx
             jmp   _sf_success
