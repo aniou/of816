@@ -2,24 +2,23 @@
 ; ESC mode for OF terminal emu
 ; Zero Page
 ;
-ESCMODE  = DP_END
-ESCACC   = ESCMODE+2          ; accumulator for OF terminal emu
-MNUM2    = ESCACC+2           ; factor for converting numbers
+                                 ; addr  size
+ESCMODE   = DP_END               ; $34   2 bytes
+ESCACC    = ESCMODE+2            ; $36   2 bytes accumulator for OF terminal emu
+MNUM2     = ESCACC+2             ; $38   2 bytes factor for converting numbers
+DEF_COLOR = MNUM2+2              ; $3a   1 byte  default fore color
+                                 ; $3b           first free
+
 ;ESCNUM   = MNUM2+2            ; parameter number (0-15) doubled by factor 2 XXX: to one byte?
 ;NUMCOUNT = ESCNUM+2           ; digit number in Pn
 ;ESCPn    = NUMCOUNT+2         ; 32 bytes for 16 P parameter numbers, see notes.md
 ;ESCDIAG  = ESCPn+32           ; 2 bytes for diagnostic
 ;ESCEND   = ESCDIAG+2
 
-ESCNUM   = $B0                ; parameters count, doubled by 2 - aligned for better debug
-NUMCOUNT = ESCNUM+2           ; digit number in Pn
-ESCPn    = $C0                ; 32 bytes for 16 P parameter numbers
-ESCDIAG  = $E0                ; 2 bytes, aligned for better visibility
-
-; Constants
-DEF_FG     = $07
-DEF_BG     = $08
-DEF_COLORS = $78              ; "white" on "bright black", $78
+ESCNUM   = $B0                  ; $b0   2 bytes parameters count, doubled by 2 - aligned for better debug
+NUMCOUNT = ESCNUM+2             ; $b2   2 bytes digit number in Pn
+ESCPn    = $C0                  ; $c0  32 bytes for 16 P parameter numbers
+ESCDIAG  = $E0                  ; $e0   2 bytes, aligned for better visibility
 
 ; C256 addresses and vectors
 C256_COLS_VISIBLE     = $0F

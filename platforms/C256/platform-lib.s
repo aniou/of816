@@ -99,7 +99,8 @@ table:      .addr _sf_pre_init
             bne   :-
 
             ; set new default color
-            lda   #DEF_COLORS
+            lda   #$78                            ; "white" on "bright black"
+            sta   DEF_COLOR
             sta   f:C256_CURCOLOR
 
             ; update screen color
@@ -483,7 +484,7 @@ ed_0:       nop
             bne   :-
 
             plx                   ; restore saved position
-            lda   #DEF_COLORS
+            lda   DEF_COLOR
 :           sta   C256_CS_COLOR_MEM_PTR, x
             inx
             bne   :-
@@ -508,7 +509,7 @@ ed_1:       nop
             bpl   :-
 
             plx                   ; restore saved position
-            lda   #DEF_COLORS
+            lda   DEF_COLOR
 :           sta   C256_CS_COLOR_MEM_PTR, x
             dex
             bpl   :-
@@ -523,7 +524,7 @@ ed_2:       setas
             bpl   :-
 
             ldx   #$2000
-            lda   #DEF_COLORS
+            lda   DEF_COLOR
 :           sta   C256_CS_COLOR_MEM_PTR, x
             dex
             bpl   :-
@@ -568,7 +569,11 @@ sgr0:       lda   ESCPn, x
 
 :           cmp   #39             ; default foreground?
             bne   :+
-            lda   #DEF_FG
+            lda   DEF_COLOR       ; set_fg is universal and uses values 0-f
+            rol
+            rol
+            rol
+            rol
             bra   set_fg
 
 :           cmp   #40
@@ -581,7 +586,8 @@ sgr0:       lda   ESCPn, x
 
 :           cmp   #49             ; default bacground?
             bne   :+
-            lda   #DEF_BG
+            lda   DEF_COLOR
+            and   #$0f
             bra   set_bg
 
 :           cmp   #90
@@ -608,7 +614,7 @@ next_parm:  inx
 
 reset:      setas
             ;wdm   10
-            lda   #DEF_COLORS
+            lda   DEF_COLOR
             sta   f:C256_CURCOLOR
             setal
             bra   next_parm       ; end or return to params
