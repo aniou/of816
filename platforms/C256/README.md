@@ -10,9 +10,9 @@ It works in [Foenix IDE](https://github.com/Trinity-11/FoenixIDE) from
 sersion [0.5.3.1](https://github.com/Trinity-11/FoenixIDE/releases), 
 see [below](#on-foenixide) for instructions. 
 
-It will be possible to run current, unmodified version of this port on 
-[go65c816 emulator](https://github.com/aniou/go65c816)  in near future 
-(code and instructions will be published soon).
+It is possible to run current, unmodified version of this port on 
+[go65c816 emulator](https://github.com/aniou/go65c816), see README.md
+in go65c816 repository for [instructions](https://github.com/aniou/go65c816#running-forth).
 
 ## Latest changes
 
