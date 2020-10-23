@@ -99,7 +99,12 @@ table:      .addr _sf_pre_init
             bne   :-
 
             ; set new default color
-            lda   #$78                            ; "white" on "bright black"
+            lda   #$00
+            sta   C256_BORDER_COLOR_B
+            sta   C256_BORDER_COLOR_G
+            sta   C256_BORDER_COLOR_R
+            ;lda   #$78                            ; "white" on "bright black"
+            lda   #$c4                            ; light blue on blue
             sta   DEF_COLOR
             sta   f:C256_CURCOLOR
 
@@ -129,7 +134,8 @@ text_color_lut:  ;  B    G    R  alpha (not used for text?)
             .byte   0,   0, 120, 255  ; red
             .byte   0, 120,   0, 255  ; green
             .byte   0, 120, 120, 255  ; yellow
-            .byte 180,   0,   0, 255  ; blue
+;            .byte 180,   0,   0, 255  ; blue
+            .byte $ba, $48, $0c, $ff  ; blue, atari
             .byte 120,   0, 120, 255  ; magenta
             .byte 110, 110,   0, 255  ; cyan
             .byte  64,  64,  64, 255  ; white
@@ -138,7 +144,8 @@ text_color_lut:  ;  B    G    R  alpha (not used for text?)
             .byte   0,   0, 255, 255  ; bright red
             .byte   0, 255,   0, 255  ; bright green
             .byte   0, 255, 255, 255  ; bright yellow
-            .byte 255,  92,  92, 255  ; bright blye
+;            .byte 255,  92,  92, 255  ; bright blue
+            .byte $fe, $ae, $72, $ff  ; bright blue, 'atari'
             .byte 255,   0, 255, 255  ; bright magenta
             .byte 255, 255,   0, 255  ; bright cyan
             .byte 170, 170, 170, 255  ; bright white
@@ -228,9 +235,12 @@ do_null:    plp                     ; really reqiured?
             bne   :+
             inc   ESCMODE
             bra   done
-:           cpy   #$0a            ; crude hack - c256 mimic c65 and uses cr only
+:           lda   f:C256F_MODEL_MAJOR
+            cmp   #$01            ; another crude hack, go65c816 has 1 here, IDE has 0, hw has 43
+            beq   :+
+            cpy   #$0a            ; crude hack - c256 mimic c65 and uses cr only
             beq   done            ; LF is interpreted as extra line down. XXX - make 'cr_mode'
-            jsr   _con_write
+:           jsr   _con_write
 done:       plp
             plx
             jmp   _sf_success
