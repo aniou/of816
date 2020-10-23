@@ -16,10 +16,23 @@ in go65c816 repository for [instructions](https://github.com/aniou/go65c816#runn
 
 ## Latest changes
 
+* 2020-10-13: CUP/ED sequences support - now words AT-XY and PAGE works!
+
+  From now print routines silently skip over LF character - this is an
+  workaround for default C256 kernel that treats CR like original Commodore 
+  (line down and go to column 0) and LF as "one line down" that leads 
+  to redundant empty lines. 
+  
+  OF816 forth contains sample editor that may be tested in following way:
+  
+ ![running editor](doc/editor-ide-1.png)  
+  
+ ![running editor](doc/editor-ide-2.png)  
+
 * 2020-10-11: foundations for ANSI codes support and working 3/4 bit SGR code.
 
-  See [fcode/ansi.fs] for working examples and syntax for OpenFirmware hex
-  code support in strings.
+  See [fcode/ansi.fs](fcode/ansi.fs) for working examples and syntax for 
+  OpenFirmware hex code support in strings.
 
 ![ANSI SGR support](doc/ansi-colors-ide-1.png)
 
