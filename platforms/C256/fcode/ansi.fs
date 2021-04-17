@@ -96,6 +96,28 @@ external
   CR
 ;
 
+: tabg3
+  " bright bg:"(20 1B)[90;100mblack"
+  type
+  " "(20 1B)[101mred"
+  type
+  " "(20 1B)[102mgreen"
+  type
+  " "(20 1B)[103myellow"
+  type
+  " "(20 1B)[104mblue"
+  type
+  " "(20 1B)[105mmagenta"
+  type
+  " "(20 1B)[106mcyan"
+  type
+  " "(20 1B)[107;30mwhite"
+  type
+  " "(20 1B)[0m"
+  type
+  CR
+;
+
 : tafg1
   " normal fg:"(20 1B)[30mblack"
   type
@@ -139,7 +161,7 @@ external
 ;
 
 : ta
-  tafg1 tafg2 tabg1 tabg2
+  tafg1 tafg2 tabg1 tabg2 tabg3
 ;
 
 ." ANSI tests loaded" cr
