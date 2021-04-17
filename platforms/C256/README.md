@@ -16,6 +16,8 @@ in go65c816 repository for [instructions](https://github.com/aniou/go65c816#runn
 
 ## Latest changes
 
+* 2021-04-13: Better integration with current foenix system.
+
 * 2020-10-13: CUP/ED sequences support - now words AT-XY and PAGE works!
 
   From now print routines silently skip over LF character - this is an

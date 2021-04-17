@@ -13,10 +13,10 @@ ld65 -v -C C256.l C256.o ../../forth.o -m forth.map -o forth
 srec_cat forth -binary -offset 0x010000 -o forth.hex -intel
 
 # build prg file (program format recognized by Foenix Kernel)
-echo -n "PGX" | srec_cat \
+echo -n -e "PGX\x01" | srec_cat \
                         - -binary -offset 0x00 \
-                        forth -binary -offset 0x07 \
-                        -generate 0x0003 0x0007 -constant-l-e 0x010000 4 \
-                        -o forth.prg -binary
+                        forth -binary -offset 0x08 \
+                        -generate 0x0004 0x0008 -constant-l-e 0x010000 4 \
+                        -o forth.pgx -binary
 
-ls -l forth *.hex *.prg
+ls -l forth *.hex *.pgx
