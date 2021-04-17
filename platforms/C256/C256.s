@@ -13,7 +13,7 @@
           xce
 
           rep   #SHORT_A|SHORT_I
-          lda   #$9000
+          lda   #$8000
           tcd                       ; direct page for forth
 
           lda   #.hiword($020000)   ; top of dictionary memory
@@ -29,7 +29,7 @@
           pha
           lda   #$0104            ; relative to direct page, The Bottom value is the address of the last usable cell
           pha
-          lda   #$afff            ; return stack first usable byte - NOT relative do DP
+          lda   #$9fff            ; return stack first usable byte - NOT relative do DP
           pha
           lda   #.hiword(_system_interface)
           pha
