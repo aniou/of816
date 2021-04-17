@@ -16,13 +16,13 @@
           lda   #$8000
           tcd                       ; direct page for forth
 
-          lda   #.hiword($020000)   ; top of dictionary memory
+          lda   #.hiword($030000)   ; top of dictionary memory
+          pha
+          lda   #.loword($030000)
+          pha
+          lda   #.hiword($020000)   ; bottom of dictionary
           pha
           lda   #.loword($020000)
-          pha
-          lda   #.hiword($010000)   ; bottom of dictionary
-          pha
-          lda   #.loword($010000)
           pha
 
           lda   #$1000            ; relative to direct page, top is the address immediately after the first usable cell.
@@ -37,7 +37,11 @@
           pha
           jsl   _Forth_initialize
           jsl   _Forth_ui
-          brk
+
+                                  ; after BYE we return here
+          lda   #$00              ; set default DP, assume 0
+          tcd
+          rtl                     ; return to caller (BASIC)
           .byte $00
 .endproc
 .popseg

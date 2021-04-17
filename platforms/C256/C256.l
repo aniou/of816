@@ -1,10 +1,10 @@
 FEATURES {
-	STARTADDRESS: default = $3a0000;
+	STARTADDRESS: default = $010000;
 }
 
 MEMORY {
-	RAM: start = $3a0000, size = $ffff, file = %O;
-	ZP: start  = $9000,   size = $2000;
+	RAM: start = $010000, size = $ffff, file = %O;
+	ZP: start  = $8000,   size = $2000;
 }
 
 FILES {

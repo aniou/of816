@@ -173,7 +173,7 @@ text_color_lut:  ;  B    G    R  alpha (not used for text?)
             setaxs
             tya
             jsl   C256_PUTCH
-            lda   #$3a            ; XXX: artifical setting data bank
+            lda   #$01            ; XXX: artifical setting data bank
             pha                   ; XXX: just for emu testing purposes
             plb                   ; XXX: check it again
             setal
@@ -732,7 +732,6 @@ romldr:   PLATFORM_INCBIN "fcode/romloader.fc"
 ; something doesn't work here (Exception -21)
 .proc       _sf_reset_all
             plx
-            jmp   _sf_fail
-;          jml   C256_BOOT
+            rtl                  ; return to BASIC816
 .endproc
 
