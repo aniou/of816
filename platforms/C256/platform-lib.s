@@ -99,14 +99,15 @@ table:      .addr _sf_pre_init
             bne   :-
 
             ; set new default color
-            lda   #$00
-            sta   C256_BORDER_COLOR_B
-            sta   C256_BORDER_COLOR_G
-            sta   C256_BORDER_COLOR_R
-            ;lda   #$78                            ; "white" on "bright black"
-            lda   #$c4                            ; light blue on blue
+            ;lda   #$00
+            ;sta   C256_BORDER_COLOR_B
+            ;sta   C256_BORDER_COLOR_G
+            ;sta   C256_BORDER_COLOR_R
+            lda   #$78                            ; "white" on "bright black"
+            ;lda   #$c4                            ; light blue on blue
             sta   DEF_COLOR
             sta   f:C256_CURCOLOR
+            sta   C256_CURSOR_COLOR_REG
 
             ; update screen color
             ldx   #$0000
