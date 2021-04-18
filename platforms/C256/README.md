@@ -103,12 +103,12 @@ $02:0000 - $02:FFFF     FORTH dictionary
 ### Note about SD cards
 
 Current Foenixes (FMX, U/U+) requires a SD card (not HC, XC nor microSD).
-Card should be formatted as ``FAT32`` with *one sector per cluster*, ie.
-*512 bytes*!
+Card should be formatted as ``FAT32`` with **one sector per cluster**, ie.
+**512 bytes**!
 
 Typical SD card is often formatted as ``FAT16`` (it wouldn't work) and
-card formatted on default settings will have a 16 sectors per cluster
-(it wouldn't work too).
+card formatted as ``FAT32`` on default settings will likely have a 16 
+sectors per cluster (it wouldn't work too).
 
 Under linux, If Your card is detected as ``/dev/sdd`` with one partition,
 marked as ``W95 FAT32 (LBA)`` (id: ``$0c``) then valid parameters for mkfs 
