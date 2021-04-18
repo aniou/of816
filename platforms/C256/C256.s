@@ -41,7 +41,10 @@
                                   ; after BYE we return here
           lda   #$00              ; set default DP, assume 0
           tcd
-          rtl                     ; return to caller (BASIC)
+          ;rtl                    ; simple return - unfortunately
+		                          ; - breaks BASIC beyond all repair
+								  ; - reboot should do trick
+		  jml   $1000             ; C256_BOOT vector
           .byte $00
 .endproc
 .popseg
