@@ -1,10 +1,12 @@
 # C256 Foenix (FMX)
 
 This is port to [C256 Foenix](https://c256foenix.com/) system. [It works](https://www.youtube.com/watch?v=fsYlth-gQSA&feature=youtu.be)
-on real hardware, C256 FMX Rev C4A and on emulators.
+on:
+* C256 FMX Rev C4
+* FoenixU/U+
+* emulators (see below)
 
-The port itself relies on default [FMX Kernel](https://github.com/Trinity-11/Kernel_FMX/)
-but replaces included [BASIC](https://github.com/pweingar/BASIC816) 
+The port itself relies on default [FMX Kernel](https://github.com/Trinity-11/Kernel_FMX/).
 
 It works in [Foenix IDE](https://github.com/Trinity-11/FoenixIDE) from
 sersion [0.5.3.1](https://github.com/Trinity-11/FoenixIDE/releases), 
@@ -16,7 +18,11 @@ in go65c816 repository for [instructions](https://github.com/aniou/go65c816#runn
 
 ## Latest changes
 
-* 2021-04-13: Better integration with current foenix system.
+* 2021-04-14: Better integration with Foenix systems: of816 now is located
+  at lower memory addresses and can be run by issuing ``brun "forth.pgx"``
+  from BASIC.
+
+  After ``BYE`` a reset routine is called.
 
 * 2020-10-13: CUP/ED sequences support - now words AT-XY and PAGE works!
 
@@ -47,8 +53,11 @@ Port requires following utilities to be in `$PATH` to compile:
 * `ca65` and `ld65` from [CC65 development package](https://cc65.github.io/)
 
 To compile package simply go into `of816/platforms/C256/` and run `./build.sh`,
-after that You should see two files - `forth` (binary code) and `forth.hex` (same,
-but in 32bit Intel Hex format)
+after that You should see three files:
+
+* `forth` - raw binary code
+* `forth.hex` - 32bit Intel Hex format
+* `forth.pgx` - a costom C256 program format, that can be put on SD card/floppy/HDD
 
 ## Using
 
@@ -61,6 +70,10 @@ Example call on Ubuntu:
 ```code
 # python3.7 C256Mgr/C256Mgr/c256mgr.py --port /dev/ttyXRUSB0 --upload forth.hex
 ```
+
+Originally forth code was loaded at ``$3a:0000`` (in place of BASIC) and
+was started automatically after upload. Now is required to call it directly
+by issuing ``call 65536`` or ``call &H10000`` commands.
 
 ### On FoenixIDE 
 
@@ -75,15 +88,15 @@ FoenixIDE works on Windows and Linux, under Wine (tested on Kubuntu 20.04).
 
    ![starting screen](doc/foenixide-2.png)
 
-3. Wait for awhile or press enter - the rainbow should change color and
-   forth interpreter should be loaded in place of default Basic
+3. Call forth by issuing command ``call 65536``
 
-   ![starting screen](doc/foenixide-3.png)
+## Current memory map
 
+```
+$00:8000 - $00:80FF   - ZP of forth system 
+$00:8100 - $00:8FFF   - FORTH stack
+$00:9000 - $00:9FFF   - FORTH return stack
+$01:0000 - $01:FFFF   - FORTH routines
+$02:0000 - $02:FFFF     FORTH dictionary
+```
 
-## Some notes about memory location
-
-Program itself overwrites BASIC at addr `$3A:0000`, uses memory range between
-`$01:0000` and `$02:0000` and Bank0 area between `$9000` and `$AFFFF`.
-
-Provided values may be subjects to change in future.
