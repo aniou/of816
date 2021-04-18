@@ -9,7 +9,7 @@ on:
 The port itself relies on default [FMX Kernel](https://github.com/Trinity-11/Kernel_FMX/).
 
 It works in [Foenix IDE](https://github.com/Trinity-11/FoenixIDE) from
-sersion [0.5.3.1](https://github.com/Trinity-11/FoenixIDE/releases), 
+version [0.5.3.1](https://github.com/Trinity-11/FoenixIDE/releases), 
 see [below](#on-foenixide) for instructions. 
 
 It is possible to run current, unmodified version of this port on 
@@ -100,3 +100,74 @@ $01:0000 - $01:FFFF   - FORTH routines
 $02:0000 - $02:FFFF     FORTH dictionary
 ```
 
+### Note about SD cards
+
+Current Foenixes (FMX, U/U+) requires a SD card (not HC, XC nor microSD).
+Card should be formatted as ``FAT32`` with *one sector per cluster*, ie.
+*512 bytes*!
+
+Typical SD card is often formatted as ``FAT16`` (it wouldn't work) and
+card formatted on default settings will have a 16 sectors per cluster
+(it wouldn't work too).
+
+Under linux, If Your card is detected as ``/dev/sdd`` with one partition,
+marked as ``W95 FAT32 (LBA)`` (id: ``$0c``) then valid parameters for mkfs 
+will be:
+
+```
+mkfs.vfat -F 32 -s 1 -S 512 /dev/sdd1
+```
+
+Properly formatted filesystem should looks like:
+
+```
+# fsck.vfat -nv /dev/sdd1
+fsck.fat 4.1 (2017-01-24)
+Checking we can access the last sector of the filesystem
+Boot sector contents:
+System ID "mkfs.fat"
+Media byte 0xf8 (hard disk)
+       512 bytes per logical sector
+       512 bytes per cluster
+        32 reserved sectors
+First FAT starts at byte 16384 (sector 32)
+         2 FATs, 32 bit entries
+  15438336 bytes per FAT (= 30153 sectors)
+Root directory start at cluster 2 (arbitrary size)
+Data area starts at byte 30893056 (sector 60338)
+   3859534 data clusters (1976081408 bytes)
+62 sectors/track, 62 heads
+      2048 hidden sectors
+   3919872 sectors total
+```
+
+```
+# fatcat -i /dev/sdd1
+FAT Filesystem information
+
+Filesystem type: FAT32
+OEM name: mkfs.fat
+Total sectors: 3919872
+Total data clusters: 3859584
+Data size: 1976107008 (1.84039G)
+Disk size: 2006974464 (1.86914G)
+Bytes per sector: 512
+Sectors per cluster: 1
+Bytes per cluster: 512
+Reserved sectors: 32
+Sectors per FAT: 30153
+```
+
+```
+# LANG=C fdisk -l /dev/sdd
+Disk /dev/sdd: 1.89 GiB, 2008023040 bytes, 3921920 sectors
+Disk model: SD/MMC Reader   
+Units: sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+Disklabel type: dos
+Disk identifier: 0x00000000
+
+Device     Boot Start     End Sectors  Size Id Type
+/dev/sdd1        2048 3921919 3919872  1.9G  c W95 FAT32 (LBA)
+```
