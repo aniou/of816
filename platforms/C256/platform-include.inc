@@ -20,6 +20,8 @@ NUMCOUNT = ESCNUM+2             ; $b2   2 bytes digit number in Pn
 ESCPn    = $C0                  ; $c0  32 bytes for 16 P parameter numbers
 ESCDIAG  = $E0                  ; $e0   2 bytes, aligned for better visibility
 
+TMP_PTR  = ESCDIAG+2            ; $e2   4 bytes, temporary pointer
+
 ; C256 addresses and vectors
 C256_COLS_VISIBLE     = $0F
 C256_LINES_VISIBLE    = $13

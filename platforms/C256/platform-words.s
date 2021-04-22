@@ -1,12 +1,100 @@
 ; Platform support dictionary words for C256 FOENIX FMX
 ;
 
+; ---------------------------------------------------------------------
+; directory support words, based on
+; https://forth-standard.org/proposals/directory-experiemental-proposal
+;
+;
+; check after C256's kernel change!
+
+C256_DOS_FD_PTR      = $000340   ; 4 byte pointer to FD data
+C256_DOS_FD_SIZE     = 32        ;
+C256_F_DIROPEN       = $001108   ; routine
+C256_BIOS_STATUS     = $000320   ; 1 byte, see sdos_bios.asm
+C256_DOS_STATUS      = $00032E   ; 1 byte, see sdos_fat.asm for statuses
+
+; todo - free path
+dword       OPEN_DIR,"OPEN-DIR"
+            ENTER                      ; path, size
+            .dword DUP                 ; path, size, size
+            .dword INCR                ; path, size, size+1
+            .dword DUP                 ; path, size, size+1, size+1
+            .dword ALLOC               ; path, size, size+1, buf
+            .dword SWAP                ; path, size, buf, size+1
+            .dword TWODUP              ; path, size, buf, size2, buf, size2
+            .dword ERASE               ; path, size, buf, size2
+            .dword DROP                ; path, size, buf
+            .dword DUP                 ; path, size, buf,  buf
+            .dword TWOSWAP             ; buf,  buf,  path, size
+            .dword ROT                 ; buf,  path, size, buf
+            .dword SWAP                ; buf,  path, buf, size
+            .dword CMOVE               ; buf
+            ONLIT C256_DOS_FD_SIZE     ; buf,  fdsize
+            .dword DUP                 ; buf,  fdsize, fdsize
+            .dword ALLOC               ; buf,  fdsize, fd
+            .dword SWAP                ; buf,  fd, fdsize
+            .dword TWODUP              ; buf,  fd, fdsize,  fd, fdsize
+            .dword ERASE               ; buf,  fd, fdsize
+            .dword DROP                ; buf,  fd
+            .dword DUP                 ; buf,  fd, fd
+            CODE
+            jsr  _popay                ; buf,  fd
+            sta  f:C256_DOS_FD_PTR+2
+            sta  TMP_PTR+2             ; - scratch, for future use
+            tya
+            sta  f:C256_DOS_FD_PTR
+            sta  TMP_PTR               ; - scratch, for future use
+            ENTER
+            .dword SWAP                ; fd, buf
+            .dword DUP                 ; fd, buf, buf
+            CODE
+            jsr  _popay                ; fd, buf
+            phy
+            ldy  #4                    ; #FILEDESC.PATH in C256 - high byte
+            sta  [TMP_PTR], y
+            dey
+            dey
+            pla
+            sta  [TMP_PTR], y
+            jsl  C256_F_DIROPEN
+            bcc  odir_fail
+
+            ; ok
+            ENTER                      ; fd, buf
+            ONLIT 0                    ; fd, buf, 0  - free-mem ignores u
+            .dword FREE                ; fd
+            ONLIT 0                    ; fd, 0       - ok
+            EXIT
+
+odir_fail:  ENTER
+            ONLIT 0                    ; fd, buf, 0
+            .dword FREE                ; fd
+            ONLIT 0                    ; fd, 0
+            .dword FREE                ; -
+            ONLIT 0                    ; 0           - wior=0 - fail
+            CODE
+            lda f:C256_BIOS_STATUS
+            tay
+            lda f:C256_DOS_STATUS
+            jsr _pushay                ; 0, status
+            NEXT
+eword
+
+
 
 
 ; ---------------------------------------------------------------------
 ; experimental words for ANSI support, as long FoenixIDE has bugs...
 
 .FEATURE STRING_ESCAPES
+
+dword     X2,"X2"
+          ENTER
+          SLIT ""
+          .dword OPEN_DIR
+          EXIT
+eword
 
 dword     X1,"X1"
           ENTER
