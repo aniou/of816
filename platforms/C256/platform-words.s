@@ -87,18 +87,27 @@ dirp_notend:
             cmp  #$0f                  ; it is longname?
             beq  dirp_loop
 
+            ldy  #$1c                  ; file size index
+            lda  [TMP_PTR], y
+            tay
+            lda  #$0000
+            jsr  _pushay               ; ( fd, filesize )
+
             lda  f:C256_DOS_DIR_PTR    ; file name is located at beginning of struct
             tay
             lda  f:C256_DOS_DIR_PTR+2
-            jsr  _pushay               ; ( fd, direntry )
+            jsr  _pushay               ; ( fd, filesize, direntry )
             lda  #00
             ldy  #11                   ; short name always has 11 chars
-            jsr  _pushay               ; ( fd, direntry, len )
+            jsr  _pushay               ; ( fd, filesize, direntry, len )
             ENTER
-            .dword TYPE                ; ( fd                )
+            .dword TYPE                ; ( fd, filesize                )
+            SLIT " "                   ; ( fd, filesize, string, len   )
+            .dword TYPE                ; ( fd, filesize                )
+            .dword DOTD                ; ( fd                          )
             ;.dword DOTH
-            ONLIT  0                   ; ( fd, status=0             )
-            ONLIT  0                   ; ( fd, status=0, flag=false )
+            ONLIT  0                   ; ( fd, status=0                )
+            ONLIT  0                   ; ( fd, status=0, flag=false    )
             EXIT
 
 dirp_fail:
