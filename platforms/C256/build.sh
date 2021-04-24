@@ -20,8 +20,8 @@ echo -n -e "PGX\x01" | srec_cat \
                         -o forth.pgx -binary
 
 if [ "${1}x" = "debugx" ]; then
-  # make a debug hook for quick startup on hw
-  cat debug-hook.hex >> forth.hex
+  # make a debug hook for quick startup on hw with 4M of RAM
+  ( cat forth.hex debug-hook.hex ) >> forth-debug.hex
 fi
 
 ls -l forth *.hex *.pgx
