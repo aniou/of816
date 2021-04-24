@@ -19,4 +19,9 @@ echo -n -e "PGX\x01" | srec_cat \
                         -generate 0x0004 0x0008 -constant-l-e 0x010000 4 \
                         -o forth.pgx -binary
 
+if [ "${1}x" = "debugx" ]; then
+  # make a debug hook for quick startup on hw
+  cat debug-hook.hex >> forth.hex
+fi
+
 ls -l forth *.hex *.pgx
