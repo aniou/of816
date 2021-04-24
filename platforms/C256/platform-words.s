@@ -8,93 +8,253 @@
 ;
 ; check after C256's kernel change!
 
-C256_DOS_FD_PTR      = $000340   ; 4 byte pointer to FD data
-C256_DOS_FD_SIZE     = 32        ;
-C256_F_DIROPEN       = $001108   ; routine
 C256_BIOS_STATUS     = $000320   ; 1 byte, see sdos_bios.asm
 C256_DOS_STATUS      = $00032E   ; 1 byte, see sdos_fat.asm for statuses
+C256_DOS_DIR_PTR     = $000338   ; 4 byte pointer to a directory entry
+C256_DOS_FD_PTR      = $000340   ; 4 byte pointer to FD data
+C256_DOS_FD_SIZE     = 32        ;
 
-; todo - free path
-dword       OPEN_DIR,"OPEN-DIR"
-            ENTER                      ; path, size
-            .dword DUP                 ; path, size, size
-            .dword INCR                ; path, size, size+1
-            .dword DUP                 ; path, size, size+1, size+1
-            .dword ALLOC               ; path, size, size+1, buf
-            .dword SWAP                ; path, size, buf, size+1
-            .dword TWODUP              ; path, size, buf, size2, buf, size2
-            .dword ERASE               ; path, size, buf, size2
-            .dword DROP                ; path, size, buf
-            .dword DUP                 ; path, size, buf,  buf
-            .dword TWOSWAP             ; buf,  buf,  path, size
-            .dword ROT                 ; buf,  path, size, buf
-            .dword SWAP                ; buf,  path, buf, size
-            .dword CMOVE               ; buf
-            ONLIT C256_DOS_FD_SIZE     ; buf,  fdsize
-            .dword DUP                 ; buf,  fdsize, fdsize
-            .dword ALLOC               ; buf,  fdsize, fd
-            .dword SWAP                ; buf,  fd, fdsize
-            .dword TWODUP              ; buf,  fd, fdsize,  fd, fdsize
-            .dword ERASE               ; buf,  fd, fdsize
-            .dword DROP                ; buf,  fd
-            .dword DUP                 ; buf,  fd, fd
+C256_F_DIROPEN       = $001108   ; routine
+C256_F_DIRNEXT       = $00110C   ; routine
+
+; another, simpler approach
+dword       DIROPEN,"DIROPEN"
+            ENTER
+            ONLIT C256_DOS_FD_SIZE     ; fdsize
+            .dword DUP                 ; fdsize, fdsize
+            .dword ALLOC               ; fdsize, fd
+            .dword SWAP                ; fd, fdsize
+            .dword TWODUP              ; fd, fdsize,  fd, fdsize
+            .dword ERASE               ; fd, fdsize
+            .dword DROP                ; fd
+            .dword DUP                 ; fd, fd
             CODE
-            jsr  _popay                ; buf,  fd
+            jsr  _popay                ; fd
             sta  f:C256_DOS_FD_PTR+2
-            sta  TMP_PTR+2             ; - scratch, for future use
             tya
             sta  f:C256_DOS_FD_PTR
-            sta  TMP_PTR               ; - scratch, for future use
-            ENTER
-            .dword SWAP                ; fd, buf
-            .dword DUP                 ; fd, buf, buf
-            CODE
-            jsr  _popay                ; fd, buf
-            phy
-            ldy  #4                    ; #FILEDESC.PATH in C256 - high byte
-            sta  [TMP_PTR], y
-            dey
-            dey
-            pla
-            sta  [TMP_PTR], y
             jsl  C256_F_DIROPEN
-            bcc  odir_fail
+            bcc  dirop_fail
 
-            ; ok
-            ENTER                      ; fd, buf
-            ONLIT 0                    ; fd, buf, 0  - free-mem ignores u
-            .dword FREE                ; fd
-            ONLIT 0                    ; fd, 0       - ok
-            EXIT
+            lda #00
+            tay
+            jsr _pushay                ; fd, 0
+            NEXT
 
-odir_fail:  ENTER
-            ONLIT 0                    ; fd, buf, 0
-            .dword FREE                ; fd
-            ONLIT 0                    ; fd, 0
-            .dword FREE                ; -
-            ONLIT 0                    ; 0           - wior=0 - fail
-            CODE
+dirop_fail:
             lda f:C256_BIOS_STATUS
             tay
-            lda f:C256_DOS_STATUS
-            jsr _pushay                ; 0, status
+            lda f:C256_DOS_STATUS+2
+            jsr _pushay                ; fd, status
             NEXT
 eword
 
+; read and prints file names
+; doesn't returns file name because
+; it is located outside of forth memory
+; quick poc of read dir function interface
+dword       DIRPRINT,"DIRPRINT"          ; ( fd )
+dirp_loop:
+            jsl  C256_F_DIRNEXT          ; ( fd )
+            bcc  dirp_fail
 
 
+            lda  f:C256_DOS_DIR_PTR    ; file name is located at beginning of struct
+            sta  TMP_PTR               ; I'm not very proud of that workaround
+            lda  f:C256_DOS_DIR_PTR+2
+            sta  TMP_PTR+2
+            lda  [TMP_PTR]             ; first char of short filename
+            and  #$00ff                ; we need only low byte and setas/al is sparse here
+            bne  dirp_notend           ; 00 means 'last entry'
 
+            lda  #$0000
+            tay
+            jsr  _pushay               ; ( fd, status=0 )
+
+            lda  #$ffff
+            tay
+            jsr  _pushay               ; ( fd, status=0, flag=true )
+
+            NEXT
+
+dirp_notend:
+            cmp  #$e5                  ; deleted file?
+            beq  dirp_loop
+
+            ldy  #$0b                  ; attribute index
+            lda  [TMP_PTR], y
+            and  #$ff0f
+            cmp  #$0f                  ; it is longname?
+            beq  dirp_loop
+
+            lda  f:C256_DOS_DIR_PTR    ; file name is located at beginning of struct
+            tay
+            lda  f:C256_DOS_DIR_PTR+2
+            jsr  _pushay               ; ( fd, direntry )
+            lda  #00
+            ldy  #11                   ; short name always has 11 chars
+            jsr  _pushay               ; ( fd, direntry, len )
+            ENTER
+            .dword TYPE                ; ( fd                )
+            ;.dword DOTH
+            ONLIT  0                   ; ( fd, status=0             )
+            ONLIT  0                   ; ( fd, status=0, flag=false )
+            EXIT
+
+dirp_fail:
+            lda f:C256_BIOS_STATUS
+            tay
+            lda f:C256_DOS_STATUS+2
+            jsr _pushay                ; ( fd, status               )
+            lda  #$0000
+            tay
+            jsr  _pushay               ; ( fd, status=0, flag=false )
+
+            NEXT
+eword
+
+; user-visible, simple dir word
+dword       DOTDIR,".DIR"
+            ENTER
+            .dword DIROPEN             ; fd, status
+            .dword DUP                 ; fd, status, status
+            .dword _IFFALSE
+            .dword nosuccess
+dotdirnext: ;ONLIT 50
+            ;.dword TENMS
+            .dword DROP                ; fd
+            .dword CR
+            .dword DIRPRINT            ; fd, status, flag
+            .dword _IF
+            .dword dotdirnext
+
+nosuccess:
+            .dword CR
+            SLIT "output status: "
+            .dword TYPE
+            .dword DOTH
+            ONLIT 0
+            .dword FREE                ; -  -- and exit
+            EXIT
+
+eword
+
+;dword       DIRNEXT,"DIRNEXT"          ; fd
+;            jsl  C256_F_DIRNEXT
+;            bcc  dirnext_fail
+;            lda  f:C256_DOS_DIR_PTR+2  ; file name is located at beginning of struct
+;            tay
+;            lda  f:C256_DOS_DIR_PTR
+;            jsr  _pushay               ; fd direntry
+;            lda  #00
+;            ldy  #11                   ; short name always has 11 chars
+;            jsr  _pushay               ; fd, direntry, len
+;
+;            lda #00
+;            tay
+;            jsr _pushay                ; fd, direntry, len, 0
+;            NEXT
+;
+;dirnext_fail:
+;            lda f:C256_BIOS_STATUS
+;            tay
+;            lda f:C256_DOS_STATUS+2
+;            jsr _pushay                ; fd, direntry, len, status
+;            NEXT
+;eword
+
+; ; todo - free path
+; ; todo - move asm code to separate words
+; ; open-dir ( c-addr u – wdirid wior )
+; dword       OPEN_DIR,"OPEN-DIR"
+;             ENTER                      ; path, size
+;             .dword DUP                 ; path, size, size
+;             .dword INCR                ; path, size, size+1
+;             .dword DUP                 ; path, size, size+1, size+1
+;             .dword ALLOC               ; path, size, size+1, buf
+;             .dword SWAP                ; path, size, buf, size+1
+;             .dword TWODUP              ; path, size, buf, size2, buf, size2
+;             .dword ERASE               ; path, size, buf, size2
+;             .dword DROP                ; path, size, buf
+;             .dword DUP                 ; path, size, buf,  buf
+;             .dword TWOSWAP             ; buf,  buf,  path, size
+;             .dword ROT                 ; buf,  path, size, buf
+;             .dword SWAP                ; buf,  path, buf, size
+;             .dword CMOVE               ; buf
+;             ONLIT C256_DOS_FD_SIZE     ; buf,  fdsize
+;             .dword DUP                 ; buf,  fdsize, fdsize
+;             .dword ALLOC               ; buf,  fdsize, fd
+;             .dword SWAP                ; buf,  fd, fdsize
+;             .dword TWODUP              ; buf,  fd, fdsize,  fd, fdsize
+;             .dword ERASE               ; buf,  fd, fdsize
+;             .dword DROP                ; buf,  fd
+;             .dword DUP                 ; buf,  fd, fd
+;             CODE
+;             jsr  _popay                ; buf,  fd
+;             sta  f:C256_DOS_FD_PTR+2
+;             sta  TMP_PTR+2             ; - scratch, for future use
+;             tya
+;             sta  f:C256_DOS_FD_PTR
+;             sta  TMP_PTR               ; - scratch, for future use
+;             ENTER
+;             .dword SWAP                ; fd, buf
+;             .dword DUP                 ; fd, buf, buf
+;             CODE
+;             jsr  _popay                ; fd, buf
+;             phy
+;             ldy  #4                    ; #FILEDESC.PATH in C256 - high byte
+;             sta  [TMP_PTR], y
+;             dey
+;             dey
+;             pla
+;             sta  [TMP_PTR], y
+;             jsl  C256_F_DIROPEN
+;             bcc  odir_fail
+; 
+;             ; ok
+;             ENTER                      ; fd, buf
+;             ONLIT 0                    ; fd, buf, 0  - free-mem ignores u
+;             .dword FREE                ; fd
+;             ONLIT 0                    ; fd, 0       - ok
+;             EXIT
+; 
+; odir_fail:  ENTER
+;             ONLIT 0                    ; fd, buf, 0
+;             .dword FREE                ; fd
+;             ONLIT 0                    ; fd, 0
+;             .dword FREE                ; -
+;             ONLIT 0                    ; 0           - wior=0 - fail
+;             CODE
+;             lda f:C256_BIOS_STATUS
+;             tay
+;             lda f:C256_DOS_STATUS
+;             jsr _pushay                ; 0, status
+;             NEXT
+; eword
+; 
+; ; read-dir ( c-addr u1 wdirid – u2 flag wior )
+; ; quick poc
+; dword       READ_DIR,"READ-DIR"        ; buf, size, fd
+;             jsr  _popay                ; buf, size
+;             sta  f:C256_DOS_FD_PTR+2
+;             tya
+;             sta  f:C256_DOS_FD_PTR
+;             jsl C256_F_DIRNEXT
+;             bcc  ndir_fail
+; 
+; 
+; ndir_fail   jsr  _stackincr           ; buf   -- drop
+;             jsr  _stackincr           ;       -- drop
+; 
+;             CODE
+; 
+;             NEXT
+; eword
+; 
 ; ---------------------------------------------------------------------
 ; experimental words for ANSI support, as long FoenixIDE has bugs...
 
 .FEATURE STRING_ESCAPES
-
-dword     X2,"X2"
-          ENTER
-          SLIT ""
-          .dword OPEN_DIR
-          EXIT
-eword
 
 dword     X1,"X1"
           ENTER
