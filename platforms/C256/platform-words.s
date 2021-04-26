@@ -2,7 +2,8 @@
 ;
 
 ; ---------------------------------------------------------------------
-; directory support words, based on
+; directory support words
+; for gforth implementation see
 ; https://forth-standard.org/proposals/directory-experiemental-proposal
 ;
 ;
@@ -13,9 +14,12 @@ C256_DOS_STATUS      = $00032E   ; 1 byte, see sdos_fat.asm for statuses
 C256_DOS_DIR_PTR     = $000338   ; 4 byte pointer to a directory entry
 C256_DOS_FD_PTR      = $000340   ; 4 byte pointer to FD data
 C256_DOS_FD_SIZE     = 32        ;
+C256_DOS_DST_PTR     = $000354   ; 4 bytes - Pointer for transferring data
 
+C256_F_OPEN          = $0010F0   ; routine
 C256_F_DIROPEN       = $001108   ; routine
 C256_F_DIRNEXT       = $00110C   ; routine
+C256_F_LOAD          = $001118
 
 ; another, simpler approach
 dword       DIROPEN,"DIROPEN"
@@ -44,7 +48,7 @@ dword       DIROPEN,"DIROPEN"
 dirop_fail:
             lda f:C256_BIOS_STATUS
             tay
-            lda f:C256_DOS_STATUS+2
+            lda f:C256_DOS_STATUS
             jsr _pushay                ; fd, status
             NEXT
 eword
@@ -60,10 +64,10 @@ dirp_loop:
 
 
             lda  f:C256_DOS_DIR_PTR    ; file name is located at beginning of struct
-            sta  TMP_PTR               ; I'm not very proud of that workaround
+            sta  TMP_PTR1               ; I'm not very proud of that workaround
             lda  f:C256_DOS_DIR_PTR+2
-            sta  TMP_PTR+2
-            lda  [TMP_PTR]             ; first char of short filename
+            sta  TMP_PTR1+2
+            lda  [TMP_PTR1]             ; first char of short filename
             and  #$00ff                ; we need only low byte and setas/al is sparse here
             bne  dirp_notend           ; 00 means 'last entry'
 
@@ -82,13 +86,13 @@ dirp_notend:
             beq  dirp_loop
 
             ldy  #$0b                  ; attribute index
-            lda  [TMP_PTR], y
+            lda  [TMP_PTR1], y
             and  #$ff0f
             cmp  #$0f                  ; it is longname?
             beq  dirp_loop
 
             ldy  #$1c                  ; file size index
-            lda  [TMP_PTR], y
+            lda  [TMP_PTR1], y
             tay
             lda  #$0000
             jsr  _pushay               ; ( fd, filesize )
@@ -112,12 +116,14 @@ dirp_notend:
 
 dirp_fail:
             lda f:C256_BIOS_STATUS
+            and #$00ff
             tay
-            lda f:C256_DOS_STATUS+2
-            jsr _pushay                ; ( fd, status               )
+            lda f:C256_DOS_STATUS
+            and #$00ff
+            jsr _pushay                ; ( fd, status                  )
             lda  #$0000
             tay
-            jsr  _pushay               ; ( fd, status=0, flag=false )
+            jsr  _pushay               ; ( fd, status=0, flag=false    )
 
             NEXT
 eword
@@ -240,7 +246,7 @@ eword
 ;             jsr _pushay                ; 0, status
 ;             NEXT
 ; eword
-; 
+;
 ; ; read-dir ( c-addr u1 wdirid – u2 flag wior )
 ; ; quick poc
 ; dword       READ_DIR,"READ-DIR"        ; buf, size, fd
@@ -250,18 +256,130 @@ eword
 ;             sta  f:C256_DOS_FD_PTR
 ;             jsl C256_F_DIRNEXT
 ;             bcc  ndir_fail
-; 
-; 
+;
+;
 ; ndir_fail   jsr  _stackincr           ; buf   -- drop
 ;             jsr  _stackincr           ;       -- drop
-; 
+;
 ;             CODE
-; 
+;
 ;             NEXT
 ; eword
-; 
+;
+
+
 ; ---------------------------------------------------------------------
-; experimental words for ANSI support, as long FoenixIDE has bugs...
+; interface words
+; ( c-addr u -- c-addr u ) append \0 to provided buffer, usually string
+;                          mostly used for creating 0-terminated strings
+;                          needed by FMX Kernel
+
+; note to self - it works, but looks pretty complicated. Although memmove
+;      routines also looks pretty complicated
+
+dword       TO_CSTRING,"TO-CSTRING"
+            ENTER                      ; ( src, len                                           )
+            .dword TWODUP              ; ( src, len,   src, len                               )
+            .dword DUP                 ; ( src, len,   src, len,   len                        )
+            .dword INCR                ; ( src, len,   src, len,   len+1                      )
+            .dword DUP                 ; ( src, len,   src, len,   len+1, len+1               )
+            .dword ALLOC               ; ( src, len,   src, len,   len+1, dst                 )
+            .dword SWAP                ; ( src, len,   src, len,   dst,   len+1               )
+            .dword TWODUP              ; ( src, len,   src, len,   dst,   len+1, dst,   len+1 )
+            .dword ERASE               ; ( src, len,   src, len,   dst,   len+1               )
+            .dword TWODUP              ; ( src, len,   src, len,   dst,   len+1, dst,   len+1 )
+            .dword TWOROT              ; ( src, len,   dst, len+1, dst,   len+1, src,   len   )
+            .dword TWOSWAP             ; ( src, len,   dst, len+1, src,   len,   dst,   len+1 )
+            .dword ROT                 ; ( src, len,   dst, len+1, src,   dst,   len+1, len   )
+            .dword SWAP                ; ( src, len,   dst, len+1, src,   dst,   len,   len+1 )
+            .dword DROP                ; ( src, len,   dst, len+1, src,   dst,   len          )
+            .dword CMOVE               ; ( sec, len,   dst, len+1                             )
+            .dword TWOSWAP             ; ( dst, len+1, src, len                               )
+            .dword FREE                ; ( dst, len+1                                         )
+            EXIT
+eword
+
+
+; ---------------------------------------------------------------------
+; file support words
+
+
+MY_DOS_FD_PTR = TMP_PTR1
+
+; ( c-addr u -- )  load and eval fc code from file passed as string
+dword       BYTE_RUN,"BYTE-RUN"
+            ENTER                      ; ( fname,  len                                   )
+            .dword TO_CSTRING          ; ( fname0, len                                   )
+            .dword TWODUP              ; ( fname0, len, fname0, len                      )
+            .dword DROP                ; ( fname0, len, fname0                           )
+            ONLIT C256_DOS_FD_SIZE     ; ( fname0, len, fname0, fdsize                   )
+            .dword DUP                 ; ( fname0, len, fname0, fdsize, fdsize           )
+            .dword ALLOC               ; ( fname0, len, fname0, fdsize, fd               )
+            .dword SWAP                ; ( fname0, len, fname0, fd,     fdsize            )
+            .dword TWODUP              ; ( fname0, len, fname0, fd,     fdsize, fd, fdsize  )
+            .dword ERASE               ; ( fname0, len, fname0, fd,     fdsize           )
+            .dword DROP                ; ( fname0, len, fname0, fd                       )
+            .dword SWAP                ; ( fname0, len, fd,     fname0                   )
+            .dword OVER                ; ( fname0, len, fd,     fname0, fd               )
+            ONLIT 512                  ; supported cluster size
+            .dword ALLOC
+            .dword DUP                 ; ( fname0, len, fd,     fname0, fd, buf, buf     )
+            .dword TWOSWAP             ; ( fname0, len, fd,     buf, buf, fname0, fd     )
+
+            CODE
+            ; put memory addr into ptr
+            jsr  _popay                ; ( fname0, len, fd,     buf, buf, fname0         )
+            sta  f:C256_DOS_FD_PTR+2
+            sta  MY_DOS_FD_PTR+2
+            tya
+            sta  f:C256_DOS_FD_PTR
+            sta  MY_DOS_FD_PTR
+
+            ; update pointer to filename
+            jsr  _popay                ; ( fname0, len, fd,     buf, buf                 )
+            phy                        ; preserve lower word of filename addr
+            ldy  #4                    ; FILEDESC.PATH+2
+            sta  [MY_DOS_FD_PTR], y
+            dey
+            dey
+            pla
+            sta  [MY_DOS_FD_PTR], y
+
+            ; set 512-bytes buffer for cluster size
+            jsr  _popay                ; ( fname0, len, fd,     buf                      )
+            phy
+            ldy  #16                   ; FILEDESC.BUFFER+2
+            sta  [MY_DOS_FD_PTR], y
+            dey
+            dey
+            pla
+            sta  [MY_DOS_FD_PTR], y
+
+            ; open
+            jsl  C256_F_OPEN
+            ;bcc  fopen_fail
+
+            ENTER                      ; ( fname0, len, fd, buf                          )
+            .dword TWOSWAP             ; ( fd, buf, fname0, len                          )
+            .dword FREE                ; ( fd, buf                                       )
+            CODE
+            lda f:C256_BIOS_STATUS
+            and #$00ff
+            tay
+            lda #00
+            jsr _pushay                ; ( fd, buf, bios_stat                            )
+
+            lda f:C256_DOS_STATUS
+            and #$00ff
+            tay
+            lda #00
+            jsr _pushay                ; ( fd, buf, bios_stat, dos_stat                  )
+            NEXT
+
+eword
+
+; ---------------------------------------------------------------------
+; experimental words for ANSI support testing
 
 .FEATURE STRING_ESCAPES
 
@@ -270,6 +388,15 @@ dword     X1,"X1"
           SLIT "normal:\"(20 1B)[30mblack"
           .dword TYPE
           .dword CR
+          EXIT
+eword
+
+dword     X2,"X2"
+          ENTER
+          .dword DOTDIR
+          SLIT " ansi.fc"
+          .dword BYTE_RUN
+          .dword DOTS
           EXIT
 eword
 

@@ -20,7 +20,9 @@ NUMCOUNT = ESCNUM+2             ; $b2   2 bytes digit number in Pn
 ESCPn    = $C0                  ; $c0  32 bytes for 16 P parameter numbers
 ESCDIAG  = $E0                  ; $e0   2 bytes, aligned for better visibility
 
-TMP_PTR  = ESCDIAG+2            ; $e2   4 bytes, temporary pointer
+TMP_PTR1   = ESCDIAG+2          ; $e2   4 bytes, temporary pointer, usually shadow of FD_DOS_PTR
+TMP_PTR2   = TMP_PTR1+4         ; $e6   4 bytes, temporary pointer, usually for memory-copying ops
+TMP_COUNT  = TMP_PTR2+4         ; $eb   2 bytes, universal counter
 
 ; C256 addresses and vectors
 C256_COLS_VISIBLE     = $0F
