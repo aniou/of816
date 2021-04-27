@@ -64,10 +64,10 @@ dirp_loop:
 
 
             lda  f:C256_DOS_DIR_PTR    ; file name is located at beginning of struct
-            sta  TMP_PTR1               ; I'm not very proud of that workaround
+            sta  dos::FD_PTR
             lda  f:C256_DOS_DIR_PTR+2
-            sta  TMP_PTR1+2
-            lda  [TMP_PTR1]             ; first char of short filename
+            sta  dos::FD_PTR+2
+            lda  [dos::FD_PTR]  ; first char of short filename
             and  #$00ff                ; we need only low byte and setas/al is sparse here
             bne  dirp_notend           ; 00 means 'last entry'
 
@@ -86,13 +86,13 @@ dirp_notend:
             beq  dirp_loop
 
             ldy  #$0b                  ; attribute index
-            lda  [TMP_PTR1], y
+            lda  [dos::FD_PTR], y
             and  #$ff0f
             cmp  #$0f                  ; it is longname?
             beq  dirp_loop
 
             ldy  #$1c                  ; file size index
-            lda  [TMP_PTR1], y
+            lda  [dos::FD_PTR], y
             tay
             lda  #$0000
             jsr  _pushay               ; ( fd, filesize )
@@ -304,8 +304,6 @@ eword
 ; file support words
 
 
-MY_DOS_FD_PTR = TMP_PTR1
-
 ; ( c-addr u -- )  load and eval fc code from file passed as string
 dword       BYTE_RUN,"BYTE-RUN"
             ENTER                      ; ( fname,  len                                   )
@@ -330,30 +328,30 @@ dword       BYTE_RUN,"BYTE-RUN"
             ; put memory addr into ptr
             jsr  _popay                ; ( fname0, len, fd,     buf, buf, fname0         )
             sta  f:C256_DOS_FD_PTR+2
-            sta  MY_DOS_FD_PTR+2
+            sta  dos::FD_PTR+2
             tya
             sta  f:C256_DOS_FD_PTR
-            sta  MY_DOS_FD_PTR
+            sta  dos::FD_PTR
 
             ; update pointer to filename
             jsr  _popay                ; ( fname0, len, fd,     buf, buf                 )
             phy                        ; preserve lower word of filename addr
             ldy  #4                    ; FILEDESC.PATH+2
-            sta  [MY_DOS_FD_PTR], y
+            sta  [dos::FD_PTR], y
             dey
             dey
             pla
-            sta  [MY_DOS_FD_PTR], y
+            sta  [dos::FD_PTR], y
 
-            ; set 512-bytes buffer for cluster size
+            ; set pointer to 512-bytes buffer for cluster size
             jsr  _popay                ; ( fname0, len, fd,     buf                      )
             phy
             ldy  #16                   ; FILEDESC.BUFFER+2
-            sta  [MY_DOS_FD_PTR], y
+            sta  [dos::FD_PTR], y
             dey
             dey
             pla
-            sta  [MY_DOS_FD_PTR], y
+            sta  [dos::FD_PTR], y
 
             ; open
             jsl  C256_F_OPEN
