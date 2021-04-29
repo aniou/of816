@@ -46,6 +46,7 @@
 
 PLATFORM_INCLUDE "platform-include.inc"
 PLATFORM_INCLUDE "platform-macros.inc"
+.include "platform-kernel-vectors.inc"
 
 cpu_clk   = 14318000
 

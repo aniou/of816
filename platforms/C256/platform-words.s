@@ -85,13 +85,14 @@ dirp_notend:
             cmp  #$e5                  ; deleted file?
             beq  dirp_loop
 
-            ldy  #$0b                  ; attribute index
+            ldy  #direntry::ATTRIBUTE
             lda  [dos::FD_PTR], y
             and  #$ff0f
             cmp  #$0f                  ; it is longname?
             beq  dirp_loop
 
-            ldy  #$1c                  ; file size index
+            ; XXX - bad, SIZE is DWORD, not WORD!
+            ldy  #direntry::SIZE
             lda  [dos::FD_PTR], y
             tay
             lda  #$0000
@@ -336,7 +337,7 @@ dword       BYTE_RUN,"BYTE-RUN"
             ; update pointer to filename
             jsr  _popay                ; ( fname0, len, fd,     buf, buf                 )
             phy                        ; preserve lower word of filename addr
-            ldy  #4                    ; FILEDESC.PATH+2
+            ldy  #filedesc::PATH+2
             sta  [dos::FD_PTR], y
             dey
             dey
@@ -346,7 +347,7 @@ dword       BYTE_RUN,"BYTE-RUN"
             ; set pointer to 512-bytes buffer for cluster size
             jsr  _popay                ; ( fname0, len, fd,     buf                      )
             phy
-            ldy  #16                   ; FILEDESC.BUFFER+2
+            ldy  #filedesc::BUFFER+2
             sta  [dos::FD_PTR], y
             dey
             dey
@@ -355,8 +356,13 @@ dword       BYTE_RUN,"BYTE-RUN"
 
             ; open
             jsl  C256_F_OPEN
-            ;bcc  fopen_fail
+            ;bcc  fopen_finish          ; C=0 in C256 == failure
 
+            ; allocate buffer for data
+
+            ; ENTER                      ; ( fname0, len, fd, buf                          )
+
+fopen_finish:
             ENTER                      ; ( fname0, len, fd, buf                          )
             .dword TWOSWAP             ; ( fd, buf, fname0, len                          )
             .dword FREE                ; ( fd, buf                                       )
