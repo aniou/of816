@@ -40,10 +40,12 @@ dword       DIROPEN,"DIROPEN"
             NEXT
 
 dirop_fail:
-            lda f:C256_BIOS_STATUS
-            tay
             lda f:C256_DOS_STATUS
-            jsr _pushay                ; fd, status
+            and #$00ff
+            tay
+            lda f:C256_BIOS_STATUS
+            and #$00ff
+            jsr _pushay                ; ( fd, hi:bios_stat|lo:dos_stat             )
             NEXT
 eword
 
@@ -288,7 +290,7 @@ dword       TO_CSTRING,"TO-CSTRING"
             .dword ROT                 ; ( src, len,   dst, len+1, src,   dst,   len+1, len   )
             .dword SWAP                ; ( src, len,   dst, len+1, src,   dst,   len,   len+1 )
             .dword DROP                ; ( src, len,   dst, len+1, src,   dst,   len          )
-            .dword CMOVE               ; ( sec, len,   dst, len+1                             )
+            .dword CMOVE               ; ( src, len,   dst, len+1                             )
             .dword TWOSWAP             ; ( dst, len+1, src, len                               )
             .dword FREE                ; ( dst, len+1                                         )
             EXIT
@@ -352,8 +354,15 @@ dword       BYTE_RUN,"BYTE-RUN"
 
             ; open and read first 512-bytes
             jsl  c256::F_OPEN
-            bcc  fopen_finish          ; C=0 in C256 == failure
+            bcs  :+                    ; C=0 in C256 == failure
 
+	; set fileaddr=0 when something has failed
+            lda  #0
+            tay
+            jsr  _pushay	      ; ; ( name0, len, fd,  buf, fileaddr=0            )
+	bra  fopen_finish
+
+:
             ; allocate area for file
             ldy  #filedesc::SIZE+2
             lda  [dos::FD_PTR], y
@@ -416,17 +425,13 @@ fopen_finish:
             .dword FREE                ; ( --                   ) ( R: fileaddr          )
 	.dword RtoP                ; ( fileaddr             )
             CODE
-            lda f:C256_BIOS_STATUS
-            and #$00ff
-            tay
-            lda #00
-            jsr _pushay                ; ( fileaddr, bios_stat                           )
 
             lda f:C256_DOS_STATUS
             and #$00ff
             tay
-            lda #00
-            jsr _pushay                ; ( fileaddr, bios_stat, dos_stat                 )
+            lda f:C256_BIOS_STATUS
+            and #$00ff
+            jsr _pushay                ; ( fileaddr, hi:bios_stat|lo:dos_stat             )
             NEXT
 
 eword
