@@ -350,7 +350,7 @@ dword       BYTE_RUN,"BYTE-RUN"
             sta  [dos::FD_PTR], y
             sta  dos::BUFFER_PTR       ; ZP pointer for data copy
 
-            ; open
+            ; open and read first 512-bytes
             jsl  c256::F_OPEN
             bcc  fopen_finish          ; C=0 in C256 == failure
 
@@ -375,24 +375,58 @@ dword       BYTE_RUN,"BYTE-RUN"
             sta  dos::DST_PTR+2
             sty  dos::DST_PTR
 
+fopen_read:
+            ldy  #0
+fopen_loop:
+	setas	      ; optimize it to words? source buffer already is in power of 2
+            lda  [dos::BUFFER_PTR], y  ; relax, '[dir], y' does not wrap at bank boundary
+            sta  [dos::DST_PTR], y     ; same as above
+	setal
 
+	lda  dos::SIZE_COUNTER
+	bne  :+
+	dec  dos::SIZE_COUNTER+2
+:	dec  dos::SIZE_COUNTER
+	beq  fopen_finish
+
+            iny
+            cpy  #512
+            bne  fopen_loop
+
+            clc
+            lda  dos::DST_PTR
+            adc  #512
+            sta  dos::DST_PTR
+            bcc  :+
+            inc  dos::DST_PTR+2
+
+            ; read next 512-bytes
+:           jsl  c256::F_READ
+            bcs  fopen_read            ; C=0 in C256 == failure
 
 fopen_finish:
-            ENTER                      ; ( fname0, len, fd, buf                          )
-            .dword TWOSWAP             ; ( fd, buf, fname0, len                          )
-            .dword FREE                ; ( fd, buf                                       )
+            ENTER                      ; ( name0, len, fd,  buf, fileaddr                )
+	.dword PtoR                ; ( name0, len, fd,  buf ) ( R: fileaddr          )
+                                       ; ( fname0, len, fd, buf ) ( R: fileaddr          )
+            .dword TWOSWAP             ; ( fd, buf, fname0, len ) ( R: fileaddr          )
+            .dword FREE                ; ( fd, buf              ) ( R: fileaddr          )
+            ONLIT 0
+            .dword FREE                ; ( fd                   ) ( R: fileaddr          )
+            ONLIT 0
+            .dword FREE                ; ( --                   ) ( R: fileaddr          )
+	.dword RtoP                ; ( fileaddr             )
             CODE
             lda f:C256_BIOS_STATUS
             and #$00ff
             tay
             lda #00
-            jsr _pushay                ; ( fd, buf, bios_stat                            )
+            jsr _pushay                ; ( fileaddr, bios_stat                           )
 
             lda f:C256_DOS_STATUS
             and #$00ff
             tay
             lda #00
-            jsr _pushay                ; ( fd, buf, bios_stat, dos_stat                  )
+            jsr _pushay                ; ( fileaddr, bios_stat, dos_stat                 )
             NEXT
 
 eword
