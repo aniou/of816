@@ -13,7 +13,6 @@ C256_BIOS_STATUS     = $000320   ; 1 byte, see sdos_bios.asm
 C256_DOS_STATUS      = $00032E   ; 1 byte, see sdos_fat.asm for statuses
 C256_DOS_DIR_PTR     = $000338   ; 4 byte pointer to a directory entry
 C256_DOS_FD_PTR      = $000340   ; 4 byte pointer to FD data
-C256_DOS_FD_SIZE     = 32        ;
 C256_DOS_DST_PTR     = $000354   ; 4 bytes - Pointer for transferring data
 
 C256_F_OPEN          = $0010F0   ; routine
@@ -24,7 +23,7 @@ C256_F_LOAD          = $001118
 ; another, simpler approach
 dword       DIROPEN,"DIROPEN"
             ENTER
-            ONLIT C256_DOS_FD_SIZE     ; fdsize
+            ONLIT .sizeof(filedesc)    ; ( fdsize )
             .dword DUP                 ; fdsize, fdsize
             .dword ALLOC               ; fdsize, fd
             .dword SWAP                ; fd, fdsize
@@ -311,7 +310,7 @@ dword       BYTE_RUN,"BYTE-RUN"
             .dword TO_CSTRING          ; ( fname0, len                                   )
             .dword TWODUP              ; ( fname0, len, fname0, len                      )
             .dword DROP                ; ( fname0, len, fname0                           )
-            ONLIT C256_DOS_FD_SIZE     ; ( fname0, len, fname0, fdsize                   )
+            ONLIT .sizeof(filedesc)    ; ( fname0, len, fname0, fdsize                   )
             .dword DUP                 ; ( fname0, len, fname0, fdsize, fdsize           )
             .dword ALLOC               ; ( fname0, len, fname0, fdsize, fd               )
             .dword SWAP                ; ( fname0, len, fname0, fd,     fdsize            )
@@ -349,18 +348,39 @@ dword       BYTE_RUN,"BYTE-RUN"
             phy
             ldy  #filedesc::BUFFER+2
             sta  [dos::FD_PTR], y
+            sta  dos::BUFFER_PTR+2     ; ZP pointer for data copy
             dey
             dey
             pla
             sta  [dos::FD_PTR], y
+            sta  dos::BUFFER_PTR       ; ZP pointer for data copy
 
             ; open
-            jsl  C256_F_OPEN
-            ;bcc  fopen_finish          ; C=0 in C256 == failure
+            jsl  c256::F_OPEN
+            bcc  fopen_finish          ; C=0 in C256 == failure
 
-            ; allocate buffer for data
+            ; allocate area for file
+            ldy  #filedesc::SIZE+2
+            lda  [dos::FD_PTR], y
+            sta  dos::SIZE_COUNTER+2   ; save for future use
+            pha
+            ldy  #filedesc::SIZE
+            lda  [dos::FD_PTR], y
+            sta  dos::SIZE_COUNTER     ; save for future use
+            tay
+            pla
+            jsr  _pushay               ; ( name0, len, fd,  buf, filelen                 )
 
-            ; ENTER                      ; ( fname0, len, fd, buf                          )
+            ENTER
+            .dword ALLOC               ; ( name0, len, fd,  buf, fileaddr                )
+            .dword DUP                 ; ( name0, len, fd,  buf, fileaddr, fileaddr      )
+
+            CODE
+            jsr  _popay                ; ( name0, len, fd,  buf, fileaddr                )
+            sta  dos::DST_PTR+2
+            sty  dos::DST_PTR
+
+
 
 fopen_finish:
             ENTER                      ; ( fname0, len, fd, buf                          )
