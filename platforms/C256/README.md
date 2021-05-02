@@ -33,9 +33,9 @@ in go65c816 repository for [instructions](https://github.com/aniou/go65c816#runn
       ``eval`` on data and free memory.
     * ``byte-run`` *( c-addr u -- )* - takes filename, reads file (fcode) and
       then calls ``byte-load``. Memory is freed.
-    * ``build.sh`` can be now called with ``debug`` parameter. Script called 
-      in this way creates  additional file, ``forth-debug.hex``, thats overwrites 
-      part of BASIC and starts of816 directly after upload by debug port. 
+    * ``build.sh`` can be called with ``debug`` parameter. Script creates  
+      additional file, ``forth-debug.hex``, thats overwrites part of BASIC 
+      and starts of816 directly after upload by debug port. 
 
 * 2021-04-14: Better integration with Foenix systems: of816 now is located
   at lower memory addresses and can be run by issuing ``brun "forth.pgx"``
