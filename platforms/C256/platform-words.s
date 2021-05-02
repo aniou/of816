@@ -102,7 +102,7 @@ dirp_notend:
             ldy  #11                   ; short name always has 11 chars
             jsr  _pushay               ; ( fd, filesize, direntry, len )
             ENTER
-            .dword TYPE                ; ( fd, filesize                )
+            .dword TYPE                ; ( fd, filesize                ) XXX - change to name/ext scheme! now prints "12345678ext"
             SLIT " "                   ; ( fd, filesize, string, len   )
             .dword TYPE                ; ( fd, filesize                )
             .dword DOTD                ; ( fd                          )
@@ -300,9 +300,10 @@ eword
 ; ---------------------------------------------------------------------
 ; file support words
 
-
-; ( c-addr u -- )  load and eval fc code from file passed as string
-dword       BYTE_RUN,"BYTE-RUN"
+; ( c-addr u -- c-addr u ior )  load file passed as string, returns memory addr,
+;                               data length and combined operation status
+;
+dword       FILE_LOAD,"FILE-LOAD"
             ENTER                      ; ( fname,  len                                   )
             .dword TO_CSTRING          ; ( fname0, len                                   )
             .dword TWODUP              ; ( fname0, len, fname0, len                      )
@@ -376,11 +377,12 @@ dword       BYTE_RUN,"BYTE-RUN"
             jsr  _pushay               ; ( name0, len, fd,  buf, filelen                 )
 
             ENTER
-            .dword ALLOC               ; ( name0, len, fd,  buf, fileaddr                )
-            .dword DUP                 ; ( name0, len, fd,  buf, fileaddr, fileaddr      )
+            .dword DUP                 ; ( name0, len, fd,  buf, filelen, filelen            )
+            .dword ALLOC               ; ( name0, len, fd,  buf, filelen, fileaddr           )
+            .dword DUP                 ; ( name0, len, fd,  buf, filelen, fileaddr, fileaddr )
 
             CODE
-            jsr  _popay                ; ( name0, len, fd,  buf, fileaddr                )
+            jsr  _popay                ; ( name0, len, fd,  buf, filelen, fileaddr           )
             sta  dos::DST_PTR+2
             sty  dos::DST_PTR
 
@@ -414,16 +416,17 @@ fopen_loop:
             bcs  fopen_read            ; C=0 in C256 == failure
 
 fopen_finish:
-            ENTER                      ; ( name0, len, fd,  buf, fileaddr                )
-	.dword PtoR                ; ( name0, len, fd,  buf ) ( R: fileaddr          )
-                                       ; ( fname0, len, fd, buf ) ( R: fileaddr          )
-            .dword TWOSWAP             ; ( fd, buf, fname0, len ) ( R: fileaddr          )
-            .dword FREE                ; ( fd, buf              ) ( R: fileaddr          )
+            ENTER                      ; ( name0, len, fd,  buf, filelen, fileaddr       )
+            .dword SWAP                ; ( name0, len, fd,  buf, fileaddr, filelen       )
+	.dword TWOPtoR             ; ( name0, len, fd,  buf ) ( R: fileaddr, filelen )
+                                       ; ( fname0, len, fd, buf ) ( R: fileaddr, filelen )
+            .dword TWOSWAP             ; ( fd, buf, fname0, len ) ( R: fileaddr, filelen )
+            .dword FREE                ; ( fd, buf              ) ( R: fileaddr, filelen )
             ONLIT 0
-            .dword FREE                ; ( fd                   ) ( R: fileaddr          )
+            .dword FREE                ; ( fd                   ) ( R: fileaddr, filelen )
             ONLIT 0
-            .dword FREE                ; ( --                   ) ( R: fileaddr          )
-	.dword RtoP                ; ( fileaddr             )
+            .dword FREE                ; ( --                   ) ( R: fileaddr, filelen )
+	.dword TWORtoP             ; ( fileaddr, filelen    )
             CODE
 
             lda f:C256_DOS_STATUS
@@ -431,9 +434,59 @@ fopen_finish:
             tay
             lda f:C256_BIOS_STATUS
             and #$00ff
-            jsr _pushay                ; ( fileaddr, hi:bios_stat|lo:dos_stat             )
+            jsr _pushay                ; ( fileaddr, filelen, hi:bios_stat|lo:dos_stat   )
             NEXT
 
+eword
+
+; ( c-addr u -- )  load file passed as string and calls BYTE-LOAD
+dword       BYTE_RUN,"BYTE-RUN"
+            ENTER                      ; ( filename len          )
+            .dword FILE_LOAD           ; ( data len ior          )
+            .dword DUP                 ; ( data len ior ior      )
+            .dword ZEROQ               ; ( data len ior bool     )
+            .dword _IF                 ; 0 is false in of816 but success in kernel
+            .dword fload_fail
+            ; file_load was ok
+            .dword DROP                ; ( data len              )
+            .dword TWODUP              ; ( data len data len     )
+            .dword DROP                ; ( data len data         )
+            ONLIT 1                    ; ( data len data 1       )
+            .dword BYTE_LOAD           ; ( data len              )
+            .dword FREE                ; ( --                    )
+            EXIT
+
+fload_fail:
+            .dword CR                  ; ( c-addr u ior          )
+            SLIT "ERR: DOS status: "
+            .dword TYPE
+            .dword DOTH                ; ( c-addr u              )
+            .dword FREE                ; ( --                    )
+            EXIT
+eword
+
+; ( c-addr u -- )  load file passed as string and calls EVAL
+dword       CODE_RUN,"CODE-RUN"
+            ENTER                      ; ( filename len          )
+            .dword FILE_LOAD           ; ( data len ior          )
+            .dword DUP                 ; ( data len ior ior      )
+            .dword ZEROQ               ; ( data len ior bool     )
+            .dword _IF                 ; 0 is false in of816 but success in kernel
+            .dword fload_fail
+            ; file_load was ok
+            .dword DROP                ; ( data len              )
+            .dword TWODUP              ; ( data len data len     )
+            .dword EVAL                ; ( data len              )
+            .dword FREE                ; ( --                    )
+            EXIT
+
+fload_fail:
+            .dword CR                  ; ( c-addr u ior          )
+            SLIT "ERR: DOS status: "
+            .dword TYPE
+            .dword DOTH                ; ( c-addr u              )
+            .dword FREE                ; ( --                    )
+            EXIT
 eword
 
 ; ---------------------------------------------------------------------
@@ -453,7 +506,7 @@ dword     X2,"X2"
           ENTER
           .dword DOTDIR
           SLIT " ansi.fc"
-          .dword BYTE_RUN
+          .dword FILE_LOAD
           .dword DOTS
           EXIT
 eword
