@@ -33,7 +33,7 @@ in go65c816 repository for [instructions](https://github.com/aniou/go65c816#runn
       ``eval`` on data and free memory.
     * ``byte-run`` *( c-addr u -- )* - takes filename, reads file (fcode) and
       then calls ``byte-load``. Memory is freed.
-    * ``build.sh`` can be called with ``debug`` parameter. Script creates  
+    * ``build.sh`` can be called with ``debug`` parameter. Script creates
       additional file, ``forth-debug.hex``, thats overwrites part of BASIC 
       and starts of816 directly after upload by debug port. 
 
