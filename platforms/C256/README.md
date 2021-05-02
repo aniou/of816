@@ -22,8 +22,8 @@ in go65c816 repository for [instructions](https://github.com/aniou/go65c816#runn
   input. They are not compatible with ANSI though, but have a potential
   to speed-up development.
 
-    * To addres possible increased memory requirements mem for file-loading
-      capabilities, memory for of816 was increased to 1MB
+    * To addres possible increased requirements for file-loading capabilities, 
+      memory for of816 was increased to 1MB
     * line-ending sequences: LF, CR/LF and CR are treated in the same way,
       as single CR
     * ``.DIR`` *( -- )* - prints directory (SD card only)
