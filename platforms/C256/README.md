@@ -25,6 +25,8 @@ in go65c816 repository for [instructions](https://github.com/aniou/go65c816#runn
   To addres possible increased memory requirements mem for of816 was
   increased to 1MB
 
+    * line-ending sequences: LF, CR/LF and CR are treated in the same way,
+      as single CR
     * .DIR ( -- ) - prints directory (SD card only)
     * file-load ( c-addr u -- c-addr u ior ) - takes string and returns
       memory address and data length followed by I/O status (0 means 'ok')
