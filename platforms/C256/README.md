@@ -22,18 +22,17 @@ in go65c816 repository for [instructions](https://github.com/aniou/go65c816#runn
   input. They are not compatible with ANSI though, but have a potential
   to speed-up development.
 
-  To addres possible increased memory requirements mem for of816 was
-  increased to 1MB
-
+    * To addres possible increased memory requirements mem for file-loading
+      capabilities, memory for of816 was increased to 1MB
     * line-ending sequences: LF, CR/LF and CR are treated in the same way,
       as single CR
-    * .DIR ( -- ) - prints directory (SD card only)
-    * file-load ( c-addr u -- c-addr u ior ) - takes string and returns
+    * ``.DIR`` *( -- )* - prints directory (SD card only)
+    * ``file-load`` *( c-addr u -- c-addr u ior )* - takes string and returns
       memory address and data length followed by I/O status (0 means 'ok')
       Example: ``s" test.fs" file-load``
-    * code-run ( c-addr u -- ) - takes filename, reads file (source), call
+    * ``code-run`` *( c-addr u -- )* - takes filename, reads file (source), call
       ``eval`` on data and free memory.
-    * byte-run ( c-addr u -- ) - takes filename, reads file (fcode) and
+    * ``byte-run`` *( c-addr u -- )* - takes filename, reads file (fcode) and
       then calls ``byte-load``. Memory is freed.
 
 * 2021-04-14: Better integration with Foenix systems: of816 now is located
