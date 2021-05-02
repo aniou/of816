@@ -53,17 +53,17 @@ eword
 ; doesn't returns file name because
 ; it is located outside of forth memory
 ; quick poc of read dir function interface
-dword       DIRPRINT,"DIRPRINT"          ; ( fd )
+dword       DIRPRINT,"DIRPRINT"        ; ( fd )
 dirp_loop:
-            jsl  c256::F_DIRNEXT          ; ( fd )
-            bcc  dirp_fail
+            jsl  c256::F_DIRNEXT       ; ( fd )
+            bcs  :+                    ; foenix kernel returns C=0 on error
+            jmp  dirp_fail
 
-
-            lda  f:C256_DOS_DIR_PTR    ; file name is located at beginning of struct
+:           lda  f:C256_DOS_DIR_PTR    ; file name is located at beginning of struct
             sta  dos::FD_PTR
             lda  f:C256_DOS_DIR_PTR+2
             sta  dos::FD_PTR+2
-            lda  [dos::FD_PTR]  ; first char of short filename
+            lda  [dos::FD_PTR]         ; first char of short filename
             and  #$00ff                ; we need only low byte and setas/al is sparse here
             bne  dirp_notend           ; 00 means 'last entry'
 
@@ -87,22 +87,32 @@ dirp_notend:
             cmp  #$0f                  ; it is longname?
             beq  dirp_loop
 
-            ; XXX - bad, SIZE is DWORD, not WORD!
             ldy  #direntry::SIZE
             lda  [dos::FD_PTR], y
-            tay
-            lda  #$0000
+            pha
+            iny
+            iny
+            lda  [dos::FD_PTR], y
+            ply
             jsr  _pushay               ; ( fd, filesize )
 
             lda  f:C256_DOS_DIR_PTR    ; file name is located at beginning of struct
             tay
             lda  f:C256_DOS_DIR_PTR+2
             jsr  _pushay               ; ( fd, filesize, direntry )
-            lda  #00
-            ldy  #11                   ; short name always has 11 chars
-            jsr  _pushay               ; ( fd, filesize, direntry, len )
+            ;lda  #00
+            ;ldy  #11                   ; short name always has 11 chars
+            ;jsr  _pushay               ; ( fd, filesize, direntry, len )
             ENTER
-            .dword TYPE                ; ( fd, filesize                ) XXX - change to name/ext scheme! now prints "12345678ext"
+            .dword DUP                 ; ( fd, filesize, direntry, direntry    )
+            ONLIT 8                    ; ( fd, filesize, direntry, direntry, 8 )
+            .dword TYPE                ; ( fd, filesize, direntry              )
+            SLIT "."
+            .dword TYPE
+            ONLIT 8
+            .dword PLUS                ; ( fd, filesize, direntry+9            )
+            ONLIT 3                    ; ( fd, filesize, direntry+9, 3         )
+            .dword TYPE                ; ( fd, filesize                        )
             SLIT " "                   ; ( fd, filesize, string, len   )
             .dword TYPE                ; ( fd, filesize                )
             .dword DOTD                ; ( fd                          )
