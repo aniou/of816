@@ -16,9 +16,9 @@
           lda   #$8000
           tcd                       ; direct page for forth
 
-          lda   #.hiword($030000)   ; top of dictionary memory
+          lda   #.hiword($120000)   ; top of dictionary memory
           pha
-          lda   #.loword($030000)
+          lda   #.loword($120000)
           pha
           lda   #.hiword($020000)   ; bottom of dictionary
           pha

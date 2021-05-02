@@ -90,14 +90,16 @@ FoenixIDE works on Windows and Linux, under Wine (tested on Kubuntu 20.04).
 
 3. Call forth by issuing command ``call 65536``
 
-## Current memory map
+## Internals 
+
+### Current memory map
 
 ```
 $00:8000 - $00:80FF   - ZP of forth system 
 $00:8100 - $00:8FFF   - FORTH stack
 $00:9000 - $00:9FFF   - FORTH return stack
 $01:0000 - $01:FFFF   - FORTH routines
-$02:0000 - $02:FFFF     FORTH dictionary
+$02:0000 - $11:FFFF     FORTH dictionary   (1MB)
 ```
 
 ### Note about SD cards
