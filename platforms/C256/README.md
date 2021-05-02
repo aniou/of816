@@ -19,8 +19,7 @@ in go65c816 repository for [instructions](https://github.com/aniou/go65c816#runn
 ## Latest changes
 
 * 2021-05-02: Important milestone was achieved - initial words for file
-  input. They are not compatible with ANSI though, but have a potential
-  to speed-up development.
+  input. They are not compatible with ANSI, but it is a subject to change.
 
     * To addres possible increased requirements for file-loading capabilities, 
       memory for of816 was increased to 1MB
