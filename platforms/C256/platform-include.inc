@@ -10,6 +10,7 @@ DEF_COLOR = MNUM2+2             ; $3a   1 byte  default fore color
 
 ESCNUM   = $B0                  ; $b0   2 bytes parameters count, doubled by 2 - aligned for better debug
 NUMCOUNT = ESCNUM+2             ; $b2   2 bytes digit number in Pn
+CR_SEQ   = NUMCOUNT+2           ; $b4   2 bytes - flag != 0 when CR was emitted...
 ESCPn    = $C0                  ; $c0  32 bytes for 16 P parameter numbers
                                 ; ...
 

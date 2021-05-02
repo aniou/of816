@@ -233,16 +233,28 @@ do_null:    plp                     ; really reqiured?
 .endproc
 
 .proc       _mode0
-            cpy   #$1B                ; ESC
-            bne   :+
+            cpy   #$1B              ; ESC
+            bne   check_cr
             inc   ESCMODE
             bra   done
-:           lda   f:C256F_MODEL_MAJOR
-            cmp   #$01            ; another crude hack, go65c816 has 1 here, IDE has 0, hw has 43
-            beq   :+
-            cpy   #$0a            ; crude hack - c256 mimic c65 and uses cr only
-            beq   done            ; LF is interpreted as extra line down. XXX - make 'cr_mode'
-:           jsr   _con_write
+
+check_cr:   cpy   #$0d              ; is CR?
+            bne   check_lf
+            sty   CR_SEQ            ; set CR sequence
+            bra   write             ; and write CR
+
+check_lf:   cpy   #$0a              ; is LF?
+            beq   handle_lf
+            stz   CR_SEQ            ; not LF at all
+            bra   write             ; clear sequence and write char
+
+handle_lf:  lda   CR_SEQ            ; in CR sequence?
+            beq   :+                ; no - simply replace LF by CR and print
+            stz   CR_SEQ            ; yes - clear sequence and skip LF
+            bra   done
+:           ldy   #$0d              ; replace single LF by CR to mimic C64
+
+write:      jsr   _con_write
 done:       plp
             plx
             jmp   _sf_success
