@@ -5011,6 +5011,14 @@ eword
 dword     ACCEPT,"ACCEPT"
           clc
 expect1:  ror   YR                ; if YR high bit set, do auto-termination mode
+          ; terrible hack p1
+          setas
+          lda   #$F8              ; bright white on bright black
+          sta   DEF_COLOR
+          sta   f:C256_CURCOLOR
+          sta   C256_CURSOR_COLOR_REG
+          setal
+          ;        end of p1
           jsr   _popxr
           jsr   _popwr
 inline:   ldy   #$00              ; entered length
@@ -5052,7 +5060,16 @@ backspc:  cpy   #$00              ; is line empty?
           jsr   do_emit
           ply
           bra   getchar
-done:     lda   #$00
+done:
+          ; terrible hack p2
+          setas
+          lda   #$78              ;  white on bright black
+          sta   DEF_COLOR
+          sta   f:C256_CURCOLOR
+          sta   C256_CURSOR_COLOR_REG
+          setal
+          ;        end of p2
+          lda   #$00
           jsr   _pushay
           bit   YR
           bmi   expect2
