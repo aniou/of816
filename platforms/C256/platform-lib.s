@@ -132,25 +132,25 @@ table:      .addr _sf_pre_init
 ; xterm-like palette, adjusted for C256 colors and my needs
 ;
 text_color_lut:  ;  B    G    R  alpha (not used for text?)
-            .byte   0,   0,   0, 255  ; black
-            .byte   0,   0, 120, 255  ; red
-            .byte   0, 120,   0, 255  ; green
-            .byte   0, 120, 120, 255  ; yellow
-;            .byte 180,   0,   0, 255  ; blue
-            .byte $ba, $48, $0c, $ff  ; blue, atari
-            .byte 120,   0, 120, 255  ; magenta
-            .byte 110, 110,   0, 255  ; cyan
-            .byte  64,  64,  64, 255  ; white
+            .byte   0,   0,   0, 255  ; 00 black
+            .byte   0,   0, 120, 255  ; 01 red
+            .byte   0, 120,   0, 255  ; 02 green
+            .byte   0, 120, 120, 255  ; 03 yellow
+;           .byte 180,   0,   0, 255  ;    blue
+            .byte $ba, $48, $0c, $ff  ; 04 blue, atari
+            .byte 120,   0, 120, 255  ; 05 magenta
+            .byte 110, 110,   0, 255  ; 06 cyan
+            .byte  64,  64,  64, 255  ; 07 white
 
-            .byte  16,  16,  16, 255  ; bright black
-            .byte   0,   0, 255, 255  ; bright red
-            .byte   0, 255,   0, 255  ; bright green
-            .byte   0, 255, 255, 255  ; bright yellow
-;            .byte 255,  92,  92, 255  ; bright blue
-            .byte $fe, $ae, $72, $ff  ; bright blue, 'atari'
-            .byte 255,   0, 255, 255  ; bright magenta
-            .byte 255, 255,   0, 255  ; bright cyan
-            .byte 170, 170, 170, 255  ; bright white
+            .byte  16,  16,  16, 255  ; 08 bright black
+            .byte   0,   0, 255, 255  ; 09 bright red
+            .byte   0, 255,   0, 255  ; 0a bright green
+            .byte   0, 255, 255, 255  ; 0b bright yellow
+;           .byte 255,  92,  92, 255  ;    bright blue
+            .byte $fe, $ae, $72, $ff  ; 0c bright blue, 'atari'
+            .byte 255,   0, 255, 255  ; 0d bright magenta
+            .byte 255, 255,   0, 255  ; 0e bright cyan
+            .byte 170, 170, 170, 255  ; 0f bright white
 
 .endproc
 
