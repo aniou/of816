@@ -3,3 +3,6 @@
 
 ; Should we instead put it in the FCode to install at startup?
 .define romloader_at_init 0
+
+; Should we replace default font, with ST-like one?
+.define alt_font 1

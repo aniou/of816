@@ -524,6 +524,14 @@ eword
 
 ; ---------------------------------------------------------------------
 
+dword     dDEF_COLOR,"$DEF_COLOR"
+          FCONSTANT DEF_COLOR + ZPAGE
+eword
+
+dword     dCLI_COLOR,"$CLI_COLOR"
+          FCONSTANT CLI_COLOR + ZPAGE
+eword
+
 
 dword     dCPU_HZ,"$CPU_HZ"
           FCONSTANT cpu_clk

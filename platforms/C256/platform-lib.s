@@ -92,7 +92,7 @@ table:      .addr _sf_pre_init
             ; init text-mode lut table
             setas
             ldx   #$0000
-:           lda   .loword(text_color_lut),x
+:           lda   .loword(text_color_lut_alt),x
             sta   C256_FG_CHAR_LUT_PTR,x
             sta   C256_BG_CHAR_LUT_PTR,x
             inx
@@ -100,19 +100,24 @@ table:      .addr _sf_pre_init
             bne   :-
 
             ; set new default color
+            ;lda   #$f0                          ; yellow on black
+            lda   #$f4                           ; light blue on blue
+            sta   CLI_COLOR
+            sta   C256_CURSOR_COLOR_REG
+
             ;lda   #$00
             ;sta   C256_BORDER_COLOR_B
             ;sta   C256_BORDER_COLOR_G
             ;sta   C256_BORDER_COLOR_R
-            lda   #$78                            ; "white" on "bright black"
-            ;lda   #$c4                            ; light blue on blue
+            ;lda   #$70                           ; white on black
+            ;lda   #$78                           ; white on bright black
+            lda   #$c4                            ; light blue on blue
             sta   DEF_COLOR
             sta   f:C256_CURCOLOR
-            sta   C256_CURSOR_COLOR_REG
 
             ; update screen color
             ldx   #$0000
-:           sta   C256_CS_COLOR_MEM_PTR,x             ; color memory area
+:           sta   C256_CS_COLOR_MEM_PTR,x         ; color memory area
             inx
             cpx   #$2000
             bne :-
@@ -126,6 +131,21 @@ table:      .addr _sf_pre_init
             bpl   :-
 
             setal
+.if alt_font
+            ; update font
+            lda   #.loword(C256_FONT_MEMORY_BANK0)
+            sta   ZR
+            lda   #.hiword(C256_FONT_MEMORY_BANK0)
+            sta   ZR+2
+
+            ldy   #$07ff
+:           lda   custom_font, y
+            sta   [ZR], y
+            dey
+            dey
+            bpl   :-
+.endif
+
             plx
             jmp   _sf_success
 
@@ -152,6 +172,29 @@ text_color_lut:  ;  B    G    R  alpha (not used for text?)
             .byte 255, 255,   0, 255  ; 0e bright cyan
             .byte 170, 170, 170, 255  ; 0f bright white
 
+; my very own, custom palette
+;
+text_color_lut_alt:  ;  B    G    R  alpha (not used for text?)
+            .byte   0,   0,   0, 255  ; 00 black
+            .byte   0,   0, 190, 255  ; 01 red
+            .byte   0, 120,   0, 255  ; 02 green
+            .byte   0, 120, 120, 255  ; 03 yellow
+;           .byte 180,   0,   0, 255  ;    blue
+            .byte $ba, $48, $0c, $ff  ; 04 blue, atari
+            .byte 120,   0, 120, 255  ; 05 magenta
+            .byte 110, 110,   0, 255  ; 06 cyan
+            .byte $78, $78, $78, 255  ; 07 white
+
+            .byte  16,  16,  16, 255  ; 08 bright black
+            .byte   0,   0, 255, 255  ; 09 bright red
+            .byte $60, $de, $5c, 255  ; 0a bright green
+;           .byte   0, 255,   0, 255  ; 0a bright green
+            .byte   0, 255, 255, 255  ; 0b bright yellow
+;           .byte 255,  92,  92, 255  ;    bright blue
+            .byte $fe, $ae, $72, $ff  ; 0c bright blue, 'atari'
+            .byte 255,   0, 255, 255  ; 0d bright magenta
+            .byte 255, 255,   0, 255  ; 0e bright cyan
+            .byte 220, 220, 220, 255  ; 0f bright white
 .endproc
 
 
@@ -747,4 +790,8 @@ romldr:   PLATFORM_INCBIN "fcode/romloader.fc"
             plx
             rtl                  ; return to BASIC816
 .endproc
+
+.if alt_font
+            custom_font: .incbin "foenix-st_8x8.bin"
+.endif
 

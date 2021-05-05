@@ -3,7 +3,7 @@ Modules list:
 C256.o:
     FStartup          Offs=000000  Size=00003D  Align=00001  Fill=0000
 forth.o:
-    FSystem           Offs=000000  Size=0071B4  Align=00001  Fill=0000
+    FSystem           Offs=000000  Size=007A5C  Align=00001  Fill=0000
     FCode             Offs=000000  Size=0016D1  Align=00001  Fill=0000
 
 
@@ -12,8 +12,8 @@ Segment list:
 Name                   Start     End    Size  Align
 ----------------------------------------------------
 FStartup              010000  01003C  00003D  00001
-FSystem               01003D  0171F0  0071B4  00001
-FCode                 0171F1  0188C1  0016D1  00001
+FSystem               01003D  017A98  007A5C  00001
+FCode                 017A99  019169  0016D1  00001
 
 
 Exports list by name:

@@ -1,12 +1,14 @@
 ;
 ; Zero Page
 ;
+ZPAGE     = $8000
                                 ; addr  size
 ESCMODE   = DP_END              ; $34   2 bytes
 ESCACC    = ESCMODE+2           ; $36   2 bytes accumulator for OF terminal emu
 MNUM2     = ESCACC+2            ; $38   2 bytes factor for converting numbers
-DEF_COLOR = MNUM2+2             ; $3a   1 byte  default fore color
-                                ; $3b           first free
+DEF_COLOR = MNUM2+2             ; $3a   1 byte  default fore|back color
+CLI_COLOR = DEF_COLOR+2         ; $3b   1 byte  color of interactive mode
+                                ; $3c           first free
 
 ESCNUM   = $B0                  ; $b0   2 bytes parameters count, doubled by 2 - aligned for better debug
 NUMCOUNT = ESCNUM+2             ; $b2   2 bytes digit number in Pn
@@ -77,14 +79,16 @@ C256_GETCHW           = $104c
 C256_LOCATE           = $1084
 
 ; memory regions
-C256_FG_CHAR_LUT_PTR  = $AF1F40
-C256_BG_CHAR_LUT_PTR  = $AF1F80
-C256_CS_TEXT_MEM_PTR  = $AFA000
-C256_CS_COLOR_MEM_PTR = $AFC000
-C256_BORDER_COLOR_B   = $AF0005
-C256_BORDER_COLOR_G   = $AF0006
-C256_BORDER_COLOR_R   = $AF0007
-C256_CURSOR_COLOR_REG = $AF0013
-C256F_MODEL_MAJOR     = $AF070B
+C256_FG_CHAR_LUT_PTR   = $AF1F40
+C256_BG_CHAR_LUT_PTR   = $AF1F80
+C256_CS_TEXT_MEM_PTR   = $AFA000
+C256_CS_COLOR_MEM_PTR  = $AFC000
+C256_BORDER_COLOR_B    = $AF0005
+C256_BORDER_COLOR_G    = $AF0006
+C256_BORDER_COLOR_R    = $AF0007
+C256_CURSOR_COLOR_REG  = $AF0013
+C256F_MODEL_MAJOR      = $AF070B
+C256_FONT_MEMORY_BANK0 = $AF8000
+C256_FONT_MEMORY_BANK1 = $AF8800
 
 ; eof

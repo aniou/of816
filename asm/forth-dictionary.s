@@ -5013,8 +5013,8 @@ dword     ACCEPT,"ACCEPT"
 expect1:  ror   YR                ; if YR high bit set, do auto-termination mode
           ; terrible hack p1
           setas
-          lda   #$F8              ; bright white on bright black
-          sta   DEF_COLOR
+          lda   CLI_COLOR              ; bright white on bright black
+          ;sta   DEF_COLOR
           sta   f:C256_CURCOLOR
           sta   C256_CURSOR_COLOR_REG
           setal
@@ -5063,8 +5063,7 @@ backspc:  cpy   #$00              ; is line empty?
 done:
           ; terrible hack p2
           setas
-          lda   #$78              ;  white on bright black
-          sta   DEF_COLOR
+          lda   DEF_COLOR
           sta   f:C256_CURCOLOR
           sta   C256_CURSOR_COLOR_REG
           setal
