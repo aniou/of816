@@ -1,169 +1,120 @@
 
 \ 2020, Piotr Meyer <aniou+forth@smutek.pl>
 
-\ ansi testing words
+start1 decimal
 
-start1
+." load ANSI words" cr
 
-." load ANSI tests" cr
+s" get-current vocabulary ANSI also ANSI definitions" evaluate
+
+\ internal words here, do not need to be exposed -----------------------
+
+\ 0-7  - normal FG colors, mapped to 30-37
+\ 8-15 - bright FG colors, mapped to 90-97
+: id_to_ansi_fg  ( color_index -- ansi_fg_index )
+  dup 8 <
+  if 30 + else 82 + then ;
+
+: id_to_ansi_bg  ( color_index -- ansi_bg_index )
+  dup 8 <
+  if 40 + else 92 + then ;
+
+: fbar ( n -- | draws bar of length n by char 0xdb|219 - polygon )
+  0 do 219 emit loop ;
+
+: bbar ( n -- | draws bar of length n by char 0x20|32 - space )
+  0 do 32  emit loop ;
+
+: color_name ( n -- | prints color name )
+  case
+     0  of s" Black         " endof
+     1  of s" Red           " endof
+     2  of s" Green         " endof
+     3  of s" Yellow        " endof
+     4  of s" Blue          " endof
+     5  of s" Magenta       " endof
+     6  of s" Cyan          " endof
+     7  of s" White         " endof
+     8  of s" Bright-Black  " endof
+     9  of s" Bright-Red    " endof
+    10  of s" Bright-Green  " endof
+    11  of s" Bright-Yellow " endof
+    12  of s" Bright-Blue   " endof
+    13  of s" Bright-Magenta" endof
+    14  of s" Bright-Cyan   " endof
+    15  of s" Bright-White  " endof
+  endcase
+  type
+;
+
+: space 
+  32 emit ;
+
+\ ---------------------------------------------------------------------
 
 external
 
-: taed
-  "  "(1B)[J"
-  type
+0 constant BLACK
+1 constant RED
+2 constant GREEN
+3 constant YELLOW
+4 constant BLUE
+5 constant MAGENTA
+6 constant CYAN
+7 constant WHITE
+
+8 constant BRIGHT-BLACK
+9 constant BRIGHT-RED
+10 constant BRIGHT-GREEN
+11 constant BRIGHT-YELLOW
+12 constant BRIGHT-BLUE
+13 constant BRIGHT-MAGENTA
+14 constant BRIGHT-CYAN
+15 constant BRIGHT-WHITE
+
+: ansi_escape ( -- | output escape code )
+  base @ decimal
+  27 emit [char] [ emit
+  base !
 ;
 
-: taed0
-  "  "(1B)[0J"
-  type
+: foreground ( n -- | set foreground color to n )
+  base @ >r decimal
+  ansi_escape id_to_ansi_fg (u.) type [char] m emit 
+  r> base !
 ;
 
-: taed1
-  "  "(1B)[1J"
-  type
+: background ( n -- | set background color to n )
+  base @ >r decimal
+  ansi_escape id_to_ansi_bg (u.) type [char] m emit
+  r> base !
 ;
 
-: taed2
-  "  "(1B)[2J"
-  type
+: color-reset ( -- | reset bg/fg colors to defaults )
+  ansi_escape s" 0" type [char] m emit ;
+
+: .colors
+  base @ decimal
+  cr
+  s"    Color name        foreground       background " type cr 
+  15 0 do 
+        I 2 u.r                 \ number 
+        space
+        I color_name
+        I id_to_ansi_fg 3 u.r   \ ansi color code 
+	    space
+        I foreground 12 fbar    \ set color and display bar
+        space
+        color-reset
+        I id_to_ansi_bg 3 u.r   \ ansi color code 
+        space
+        I background 12 bbar  \ set color and display bar
+        color-reset 
+        cr 
+       loop 
+  base !
 ;
 
-: taed3
-  "  "(1B)[3J"
-  type
-;
-
-: taed4
-  "  "(1B)[4J"
-  type
-;
-
-
-: ta00
-  " reset by 0m"(20 1B)[0m"
-  type
-  CR
-;
-
-: ta01
-  " reset by m"(20 1B)[m"
-  type
-  CR
-;
-
-: tabg1
-  " normal bg:"(20 1B)[40mblack"
-  type
-  " "(20 1B)[41mred"
-  type
-  " "(20 1B)[42mgreen"
-  type
-  " "(20 1B)[43myellow"
-  type
-  " "(20 1B)[44mblue"
-  type
-  " "(20 1B)[45mmagenta"
-  type
-  " "(20 1B)[46mcyan"
-  type
-  " "(20 1B)[47;30mwhite"
-  type
-  " "(20 1B)[0m"
-  type
-  CR
-;
-
-: tabg2
-  " bright bg:"(20 1B)[100mblack"
-  type
-  " "(20 1B)[101mred"
-  type
-  " "(20 1B)[102mgreen"
-  type
-  " "(20 1B)[103myellow"
-  type
-  " "(20 1B)[104mblue"
-  type
-  " "(20 1B)[105mmagenta"
-  type
-  " "(20 1B)[106mcyan"
-  type
-  " "(20 1B)[107;30mwhite"
-  type
-  " "(20 1B)[0m"
-  type
-  CR
-;
-
-: tabg3
-  " bright bg:"(20 1B)[90;100mblack"
-  type
-  " "(20 1B)[101mred"
-  type
-  " "(20 1B)[102mgreen"
-  type
-  " "(20 1B)[103myellow"
-  type
-  " "(20 1B)[104mblue"
-  type
-  " "(20 1B)[105mmagenta"
-  type
-  " "(20 1B)[106mcyan"
-  type
-  " "(20 1B)[107;30mwhite"
-  type
-  " "(20 1B)[0m"
-  type
-  CR
-;
-
-: tafg1
-  " normal fg:"(20 1B)[30mblack"
-  type
-  " "(20 1B)[31mred"
-  type
-  " "(20 1B)[32mgreen"
-  type
-  " "(20 1B)[33myellow"
-  type
-  " "(20 1B)[34mblue"
-  type
-  " "(20 1B)[35mmagenta"
-  type
-  " "(20 1B)[36mcyan"
-  type
-  " "(20 1B)[37mwhite"
-  type
-  " "(20 1B)[0m"
-  type
-  CR
-;
-
-: tafg2
-  " bright fg:"(20 1B)[90;40mblack"(1B)[0m"
-  type
-  " "(20 1B)[91mred"
-  type
-  " "(20 1B)[92mgreen"
-  type
-  " "(20 1B)[93myellow"
-  type
-  " "(20 1B)[94mblue"
-  type
-  " "(20 1B)[95mmagenta"
-  type
-  " "(20 1B)[96mcyan"
-  type
-  " "(20 1B)[97mwhite"(1B)[0m"
-  type
-  CR
-;
-
-: ta
-  tafg1 tafg2 tabg1 tabg2 tabg3
-;
-
-." ANSI tests loaded" cr
+." ANSI words loaded" cr
 
 fcode-end

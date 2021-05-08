@@ -46,7 +46,7 @@
 
 PLATFORM_INCLUDE "platform-include.inc"
 PLATFORM_INCLUDE "platform-macros.inc"
-.include "platform-kernel-vectors.inc"
+PLATFORM_INCLUDE "platform-kernel-vectors.inc"
 
 cpu_clk   = 14318000
 
@@ -99,16 +99,15 @@ table:      .addr _sf_pre_init
             cpx   #$40                                ; 16 colors * 4 (BGRA)
             bne   :-
 
-            ; set new default color
-            ;lda   #$f0                          ; yellow on black
+            ; set default colors
             lda   #$f4                           ; light blue on blue
             sta   CLI_COLOR
             sta   C256_CURSOR_COLOR_REG
 
-            ;lda   #$00
-            ;sta   C256_BORDER_COLOR_B
-            ;sta   C256_BORDER_COLOR_G
-            ;sta   C256_BORDER_COLOR_R
+            lda   #$00
+            sta   C256_BORDER_COLOR_B
+            sta   C256_BORDER_COLOR_G
+            sta   C256_BORDER_COLOR_R
             ;lda   #$70                           ; white on black
             ;lda   #$78                           ; white on bright black
             lda   #$c4                            ; light blue on blue

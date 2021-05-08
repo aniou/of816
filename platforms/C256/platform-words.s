@@ -769,7 +769,7 @@ dword     LW,"LW"
           EXIT
 :         PLATFORM_INCBIN "fcode/xmodem.fc"
 eword
-dword     LA,"LA"
+dword     ANSI,"ANSI"
           ENTER
           ONLIT :+
           .dword ONE
