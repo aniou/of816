@@ -117,5 +117,6 @@ external
 ;
 
 ." ANSI words loaded" cr
+s" set-current" evaluate
 
 fcode-end
