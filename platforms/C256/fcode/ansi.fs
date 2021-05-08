@@ -96,10 +96,11 @@ external
 : .colors
   base @ decimal
   cr
-  s"    Color name        foreground       background " type cr 
-  15 0 do 
+  s"      Color name        foreground       background " type cr 
+  16 0 do 
         I 2 u.r                 \ number 
-        space
+        space 
+        I .h
         I color_name
         I id_to_ansi_fg 3 u.r   \ ansi color code 
 	    space

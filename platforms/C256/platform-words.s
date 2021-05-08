@@ -524,11 +524,11 @@ eword
 
 ; ---------------------------------------------------------------------
 
-dword     dDEF_COLOR,"$DEF_COLOR"
+dword     dDEF_COLOR,"$DEF-COLOR"
           FCONSTANT DEF_COLOR + ZPAGE
 eword
 
-dword     dCLI_COLOR,"$CLI_COLOR"
+dword     dCLI_COLOR,"$CLI-COLOR"
           FCONSTANT CLI_COLOR + ZPAGE
 eword
 
