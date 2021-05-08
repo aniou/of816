@@ -18,6 +18,22 @@ in go65c816 repository for [instructions](https://github.com/aniou/go65c816#runn
 
 ## Latest changes
 
+* 2021-05-08: Eye-candy edition.
+
+    * New default font - a mix of Atari ST one with box drawing characters
+      from original C256 Kernel. They can be disabled by setting ``alt_font``
+      to ``0`` in ``platform-config.inc`` and recompiling binary.
+    * New default colors. They can be changed manually later or - in near
+      future - by default initialization file
+    * ``ansi`` word now load ANSI-related words (see screenshots)
+    * ``.colors`` words displays color table (yes! C256 has **two** different
+      lookups tables for fore- and background colors and that means 32 colors
+      on single screen) with additional information that can be used later
+    * Command-line from now has distinct, configurable color (see screenshots)
+    * Two screenshots stands for thousands of words. Or something like that.
+      ![ansi colors example 1](doc/colors-1.png)  
+      ![ansi colors example 2](doc/colors-2.png)  
+
 * 2021-05-02: Important milestone was achieved - initial words for file
   input. They are not compatible with ANSI, but it is a subject to change.
 
