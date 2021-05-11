@@ -230,7 +230,9 @@ NUM_SYSVARS .set 0
 ; 1     Flags
 ;       b7 - Immediate
 ;       b6 - Compile-only
-;       b0 - Smudge
+;       b5 - Protected
+;       b4 - Starts temporary definition in interpretation state
+;       b3 - Smudged (not findable in dictionary searches)
 ; Code  (scope <name>)
 
 .define F_IMMED %10000000         ; immediate
@@ -328,6 +330,16 @@ NUM_SYSVARS .set 0
   .charmap $27,$27 ; unmap
 .endmacro
 
+.macro hwordq dname,fname,flags
+  .charmap $27,$22 ; temporarily map single quote to double quote
+  .ifblank flags
+    hword dname,fname
+  .else
+    hword dname,fname,flags
+  .endif
+  .charmap $27,$27 ; unmap
+.endmacro
+
 .macro dchain dname
   .undefine l_dword
   .define l_dword dname
@@ -355,7 +367,7 @@ NUM_SYSVARS .set 0
 .endmacro
 
 .macro dend
-  .out .sprintf("End of dictiomnary: %s",c_dict)
+  .out .sprintf("End of dictionary: %s",c_dict)
   .ident(.sprintf("LAST_%s",c_dict)) = l_dword
   .undef c_dict
   .undef l_dword

@@ -36,7 +36,7 @@ dword     SET_ORDER,"SET-ORDER"
           .dword _IF
           .dword empty
           .dword DUP              ; ( ... widn ... wid1 n n' )
-          ONLIT 0                 ; ( ... widn ... wid1 n n' 1 )
+          ONLIT 0                 ; ( ... widn ... wid1 n n' 0 )
           .dword SLT              ; ( ... widn ... wid1 n f )
           .dword _IF              ; ( ... widn ... wid1 n )
           .dword dolist
@@ -128,26 +128,31 @@ hword     dCURRENT,"$CURRENT"
 eword
 
 .if max_search_order > 0
-; H: ( -- wid ) Return first wordlist in search order.
+; H: ( -- addr ) Return address of cell with first wid in the search order.
+; H: if search order is empty, sets the search order to contain the CURRENT word list.
 dword     CONTEXT,"CONTEXT"
 .else
 hword     CONTEXT,"CONTEXT"
 .endif
-          ENTER
 .if max_search_order > 0
-          .dword dORDER
-          .dword FETCH
-          .dword QDUP
-          .dword _IF
-          .dword empty
-          .dword DECR
-          .dword WLNUM
-          .dword FETCH
+          ENTER
+          .dword dORDER           ; ( - addr )
+          .dword DUP              ; ( .. addr addr )
+          .dword FETCH            ; ( .. addr u )
+          .dword SCELLMULT        ; ( .. addr u' )
+          .dword QDUP             ; ( .. addr u' u' | addr u' )
+          .dword _IF              ; ( .. addr u' | addr  )
+          .dword empty            ; false branch ( .. addr )
+          .dword PLUS             ; ( addr u' - addr' )
+          EXIT
+empty:    .dword CELLPLUS         ; ( addr - addr' )
+          .dword GET_CURRENT      ; ( .. addr' wid )
+          .dword TOP_OF_ORDER     ; ( .. addr' )
+          EXIT
+.else
+          .dword dCURRENT
           EXIT
 .endif
-empty:    .dword dCURRENT
-          .dword FETCH
-          EXIT
 eword
 
 .if max_search_order > 0
@@ -254,6 +259,7 @@ eword
 dword     SEAL,"SEAL"
           ENTER
           .dword CONTEXT
+          .dword FETCH
           .dword ONE
           .dword SET_ORDER
           EXIT
@@ -305,6 +311,7 @@ eword
 dword     DEFINITIONS,"DEFINITIONS"
           ENTER
           .dword CONTEXT
+          .dword FETCH
           .dword SET_CURRENT
           EXIT
 eword
@@ -1303,8 +1310,8 @@ dword     COMMA,","
 eword
 
 ; H: ( xt -- ) Compile xt into the dictionary.
-; immediacy called out in IEEE 1275-1994
-dword     COMPILECOMMA,"COMPILE,",F_IMMED
+; immediacy called out in IEEE 1275-1994, but that conflicts with standards and usage
+dword     COMPILECOMMA,"COMPILE,"
           bra   COMMA::code
 eword
 
@@ -5642,6 +5649,7 @@ dword     WORDS,"WORDS"
           ENTER
           .dword CONTEXT
           .dword FETCH
+          .dword FETCH
 lp:       .dword DUP              ; ( h -- h h )
           .dword _IF              ; ( h h -- h ) 
           .dword done
@@ -5837,13 +5845,13 @@ eword
 csmm:     jmp   _CONTROL_MM::code
 .endproc
 
-; H: ( -- ) alter execution semantics of most recently-created definition to
+; H: ( -- ) alter execution semantics of most recently-CREATEd definition to
 ; H: perform the execution semantics of the code following DOES>.
 dword     DOES,"DOES>",F_IMMED|F_CONLY
           ENTER
           .dword SEMIS
           .dword _COMP_LIT
-          jsl f:_does               ; better be 4 bytes!
+          jsl f:_does               ; better be 4 bytes! (hint: it is)
           .dword _COMP_LIT
           ENTER                     ; not really, now
           .dword _COMP_LIT
@@ -5927,11 +5935,20 @@ dword     dTWOVALUE,"$2VALUE"
 eword
 
 ; H: ( n [name< >] -- ) Create a definition that pushes n on the stack,
-; H:  n can be changed with TO.
+; H: n can be changed with TO.
 dword     VALUE,"VALUE"
           ENTER
           .dword PARSE_WORD
           .dword dVALUE
+          EXIT
+eword
+
+; H: ( n1 n2 [name< >] -- ) Create a definition that pushes n1 and n2 on the stack,
+; H: n1 and n2 can be changed with TO.
+dword     TWOVALUE,"2VALUE"
+          ENTER
+          .dword PARSE_WORD
+          .dword dTWOVALUE
           EXIT
 eword
 
@@ -6018,10 +6035,24 @@ dword     ALIAS,"ALIAS"
           NEXT
 eword
 
-; ( n xt -- ) change the first cell of the body of xt to n
-hword     _TO,"_TO"
+; H: ( n xt | n1 n2 xt -- ) change the first cell or two of the body of xt
+; H: if xt is a 2VALUE, change the first two cells of the body
+; H: if xt is any other created word, change the first cell of the body
+dword     _TO,"(TO)"
           ENTER
+          .dword DUP
+          .dword INCR
+          .dword FETCH
+          ONLIT (_push2value << 8) | opJSL
+          .dword EQUAL
+          .dword _IF
+          .dword just1
           .dword rBODY
+          .dword TUCK
+          .dword STORE
+          .dword CELLPLUS
+          .dword _SKIP
+just1:    .dword rBODY
           .dword STORE
           EXIT
 eword
@@ -6502,7 +6533,6 @@ dword     WORDLIST,"WORDLIST"
           ENTER
           ONLIT H_FORTH           ; root of all dictionaries
           .dword dCREATE_WL
-          .dword 0
           EXIT
 eword
 
