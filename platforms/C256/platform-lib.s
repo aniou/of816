@@ -184,7 +184,7 @@ text_color_lut_alt:  ;  B    G    R  alpha (not used for text?)
             .byte 110, 110,   0, 255  ; 06 cyan
             .byte $78, $78, $78, 255  ; 07 white
 
-            .byte  16,  16,  16, 255  ; 08 bright black
+            .byte  64, 64,  64, 255  ; 08 bright black
             .byte   0,   0, 255, 255  ; 09 bright red
             .byte $60, $de, $5c, 255  ; 0a bright green
 ;           .byte   0, 255,   0, 255  ; 0a bright green
