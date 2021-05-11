@@ -47,7 +47,7 @@ s" get-current vocabulary ANSI also ANSI definitions" evaluate
   type
 ;
 
-: space 
+: _space 
   32 emit ;
 
 \ ---------------------------------------------------------------------
@@ -99,16 +99,16 @@ external
   s"      Color name        foreground       background " type cr 
   16 0 do 
         I 2 u.r                 \ number 
-        space 
+        _space 
         I .h
         I color_name
         I id_to_ansi_fg 3 u.r   \ ansi color code 
-	    space
+	    _space
         I foreground 12 fbar    \ set color and display bar
-        space
+        _space
         color-reset
         I id_to_ansi_bg 3 u.r   \ ansi color code 
-        space
+        _space
         I background 12 bbar  \ set color and display bar
         color-reset 
         cr 
