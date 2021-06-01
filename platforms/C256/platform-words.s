@@ -35,17 +35,19 @@ dword       DIROPEN,"DIROPEN"
             bcc  dirop_fail
 
             lda #00
-            tay
-            jsr _pushay                ; fd, 0
+            jsr _pusha                 ; fd, 0, 0
+            lda #00
+            jsr _pusha                 ; fd, 0, 0
             NEXT
 
-dirop_fail:
-            lda f:C256_DOS_STATUS
-            and #$00ff
-            tay
+dirop_fail:                            ; XXX - move to common routine?
             lda f:C256_BIOS_STATUS
             and #$00ff
-            jsr _pushay                ; ( fd, hi:bios_stat|lo:dos_stat             )
+            jsr _pusha                 ; ( fd, bios_stat )
+
+            lda f:C256_DOS_STATUS
+            and #$00ff
+            jsr _pusha                 ; ( fd, bios_stat, dos_stat )
             NEXT
 eword
 
@@ -68,8 +70,9 @@ dirp_loop:
             bne  dirp_notend           ; 00 means 'last entry'
 
             lda  #$0000
-            tay
-            jsr  _pushay               ; ( fd, status=0 )
+            jsr  _pusha                ; ( fd, status=0 )
+            lda  #$0000
+            jsr  _pusha                ; ( fd, status=0, status=0 )
 
             lda  #$ffff
             tay
@@ -118,19 +121,21 @@ dirp_notend:
             .dword DOTD                ; ( fd                          )
             ;.dword DOTH
             ONLIT  0                   ; ( fd, status=0                )
+            ONLIT  0                   ; ( fd, status=0, status=0      )
             ONLIT  0                   ; ( fd, status=0, flag=false    )
             EXIT
 
 dirp_fail:
             lda f:C256_BIOS_STATUS
             and #$00ff
-            tay
+            jsr _pusha                 ; ( fd, bios_stat )
+
             lda f:C256_DOS_STATUS
             and #$00ff
-            jsr _pushay                ; ( fd, status                  )
+            jsr _pusha                 ; ( fd, bios_status, dos_status )
+
             lda  #$0000
-            tay
-            jsr  _pushay               ; ( fd, status=0, flag=false    )
+            jsr  _pusha                ; ( fd, bios_status, dos_status, flag=false    )
 
             NEXT
 eword
@@ -138,21 +143,25 @@ eword
 ; user-visible, simple dir word
 dword       DOTDIR,".DIR"
             ENTER
-            .dword DIROPEN             ; fd, status
-            .dword DUP                 ; fd, status, status
+            .dword DIROPEN             ; fd, bios_status, dos_status
+            .dword DUP                 ; fd, bios_status, dos_status, dos_status - XXX - not so good
             .dword _IFFALSE
             .dword nosuccess
 dotdirnext: ;ONLIT 50
             ;.dword TENMS
+            .dword DROP                ; fd, bios_status
             .dword DROP                ; fd
             .dword CR
-            .dword DIRPRINT            ; fd, status, flag
+            .dword DIRPRINT            ; fd, bios_status, dos_status, flag
             .dword _IF
             .dword dotdirnext
 
 nosuccess:
             .dword CR
-            SLIT "output status: "
+            SLIT "FAT status: "
+            .dword TYPE
+            .dword DOTH
+            SLIT "BIOS status: "
             .dword TYPE
             .dword DOTH
             ONLIT 0
