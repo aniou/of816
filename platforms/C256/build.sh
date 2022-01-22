@@ -1,7 +1,24 @@
 #!/bin/bash
-set -e -x
 export PATH="$HOME/bin:$PATH"
 
+echo "Checking for required commands..."
+miss=0
+for cmd in ca65 ld65 srec_cat toke
+do
+  which $cmd > /dev/null
+  if [[ $? -gt 0 ]]; then
+    echo "  tool ${cmd} not found in PATH"
+    miss=1
+  fi
+done
+if [[ $miss -gt 0 ]]; then
+    echo "some requied tools missing, aborting"
+    exit 1
+else
+    echo "ok."
+fi
+
+set -e -x
 toke fcode/xmodem.fs
 toke fcode/ansi.fs
 toke fcode/editor.fs
