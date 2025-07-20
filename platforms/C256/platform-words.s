@@ -15,6 +15,106 @@ C256_DOS_DIR_PTR     = $000338   ; 4 byte pointer to a directory entry
 C256_DOS_FD_PTR      = $000340   ; 4 byte pointer to FD data
 C256_DOS_DST_PTR     = $000354   ; 4 bytes - Pointer for transferring data
 
+dword		PRINT0,".PRINT0"
+			ENTER
+			SLIT "0"
+			.dword TYPE
+			EXIT
+eword
+
+; ( second minute hour day month year -- )
+dword		DOTTD,".TD"
+			ENTER				 
+			.dword BASE           ; ( $BASE )
+			.dword FETCH          ; ( base  )
+			.dword HEX
+			.dword GET_TIME       ; ( base second minute hour day month year )
+            .dword UDOTZ          ; ( base second minute hour day month )
+            SLIT "-"             
+            .dword TYPE
+			.dword DUP            ; ( base second minute hour day month month    )
+			ONLIT 10              ; ( base second minute hour day month month 10 )
+			.dword ULT            ; ( base second minute hour day month t/f      )
+			.dword _IF
+			.dword month
+			.dword PRINT0
+month:      .dword UDOTZ          ; ( base second minute hour day )
+            SLIT "-"
+            .dword TYPE
+			.dword DUP            ; ( base second minute hour day day    )
+			ONLIT 10              ; ( base second minute hour day day 10 )
+			.dword ULT            ; ( base second minute hour day t/f    )
+			.dword _IF
+			.dword day
+			.dword PRINT0
+day:		.dword UDOTZ          ; ( base second minute hour         )
+			SLIT " "
+            .dword TYPE
+			.dword DUP            ; ( base second minute hour hour    )
+			ONLIT 10              ; ( base second minute hour hour 10 )
+			.dword ULT            ; ( base second minute hour t/f     )
+			.dword _IF
+			.dword hour
+			.dword PRINT0
+hour:		.dword UDOTZ          ; ( base second minute           )
+			SLIT ":"
+            .dword TYPE
+			.dword DUP            ; ( base second minute minute     )
+			ONLIT 10              ; ( base second minute minute 10  )
+			.dword ULT            ; ( base second minute t/f        )
+			.dword _IF
+			.dword minute
+			.dword PRINT0
+minute:		.dword UDOTZ          ; ( base second            )
+			SLIT ":"
+            .dword TYPE
+			.dword DUP            ; ( base second second     )
+			ONLIT 10              ; ( base second second 10  )
+			.dword ULT            ; ( base second t/f        )
+			.dword _IF
+			.dword second
+			.dword PRINT0
+second:		.dword UDOT			  ; ( base       )
+			.dword BASE			  ; ( base $BASE )
+			.dword STORE          ; ()
+			EXIT
+eword
+
+; get-time ( -- second minute hour day month year )
+; compatible with open firmware
+dword		GET_TIME,"GET-TIME"
+			ENTER
+
+			ONLIT $AF0800		; second
+			.dword CPEEK
+            .dword DROP
+			ONLIT $AF0802		; minute
+			.dword CPEEK
+            .dword DROP
+			ONLIT $AF0804		; hour
+			.dword CPEEK
+            .dword DROP
+
+			ONLIT $AF0806		; day
+			.dword CPEEK
+            .dword DROP
+
+			ONLIT $AF0809		; month
+			.dword CPEEK
+            .dword DROP
+
+			ONLIT $AF080F		; century
+			.dword CPEEK
+            .dword DROP
+			ONLIT 8
+			.dword LSHIFT		; shift century by 8 bits left
+			ONLIT $AF080A		; year in century
+			.dword CPEEK
+            .dword DROP
+			.dword LOR			; combine with century
+			EXIT
+eword
+
 ; another, simpler approach
 dword       DIROPEN,"DIROPEN"
             ENTER
