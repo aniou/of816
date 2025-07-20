@@ -49,7 +49,8 @@ Example call on Ubuntu:
 Originally forth code was loaded at ``$3a:0000`` (in place of BASIC) and
 was started automatically after upload. Now is required to call it directly
 by issuing ``call 65536`` or ``call &H10000`` commands or - on FMX/U+ machines
-- by using `forth-debug.hex` binary.
+by using `forth-debug.hex` binary: in that case start should be automatic,
+in place of BASIC.
 
 ### On FoenixIDE 
 
