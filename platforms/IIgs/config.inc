@@ -1,14 +1,14 @@
-; Configuration for W65C816SXB Port
+; Apple IIgs Configuration File
 
-; the W65C816SXB port uses this
-PLATFORM_INCLUDE "platform-config.inc"
+; This platform uses it...
+.include "platform-config.inc"
 
 ; *** options ***
 
 ; Set this to a nonzero value if any code will run out of bank 0.  If not set, then
 ; numeric literals <= $0000FFFF will use the "fast literal" mode, getting on the
 ; stack faster and using less memory.
-; All memory in the stock 'SXB is in bank 0, so this is set.
+; We run out of bank 0 on the IIgs, so this is set
 .define no_fast_lits 1
 
 ; Set this to the size of the terminal input buffer.  This will be dynamically allocated
@@ -78,5 +78,5 @@ PLATFORM_INCLUDE "platform-config.inc"
 .if trace
   .define no_headerless 1
 .else
-  .define no_headerless 0 ; set to 1 to compile headers for all words for debugging
+  .define no_headerless 1 ; set to 1 to compile headers for all words for debugging
 .endif

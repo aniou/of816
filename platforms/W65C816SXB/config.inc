@@ -1,14 +1,15 @@
-; Config file for Neon816 port
+; Configuration for W65C816SXB Port
 
-;PLATFORM_INCLUDE "platform-config.inc"
+; the W65C816SXB port uses this
+.include "platform-config.inc"
 
 ; *** options ***
 
 ; Set this to a nonzero value if any code will run out of bank 0.  If not set, then
 ; numeric literals <= $0000FFFF will use the "fast literal" mode, getting on the
 ; stack faster and using less memory.
-; Fast literals are enabled on the Neon816
-.define no_fast_lits 0
+; All memory in the stock 'SXB is in bank 0, so this is set.
+.define no_fast_lits 1
 
 ; Set this to the size of the terminal input buffer.  This will be dynamically allocated
 ; when the system starts.  If command line history is enabled, several of these may be
