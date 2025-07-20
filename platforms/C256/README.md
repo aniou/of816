@@ -52,6 +52,12 @@ by issuing ``call 65536`` or ``call &H10000`` commands or - on FMX/U+ machines
 by using `forth-debug.hex` binary: in that case start should be automatic,
 in place of BASIC.
 
+## On MORFE/O
+
+Copy of latest forth "debug" binary is included in `data/` directory, to run 
+them you should just add path to file as parameter to emulator, i.e. `./c256u+
+ data/of816.hex`. 
+
 ### On FoenixIDE 
 
 FoenixIDE works on Windows and Linux, under Wine (tested on Kubuntu 20.04).
