@@ -44,9 +44,9 @@
 ;       The system will trust that there is FCode there and not look for a signature.
 ; $0006 ( -- ) perform RESET-ALL, restart the system as if reset button was pushed
 
-PLATFORM_INCLUDE "platform-include.inc"
-PLATFORM_INCLUDE "platform-macros.inc"
-PLATFORM_INCLUDE "platform-kernel-vectors.inc"
+.include "platform-include.inc"
+.include "platform-macros.inc"
+.include "platform-kernel-vectors.inc"
 
 cpu_clk   = 14318000
 
@@ -179,7 +179,8 @@ text_color_lut_alt:  ;  B    G    R  alpha (not used for text?)
             .byte   0, 120,   0, 255  ; 02 green
             .byte   0, 120, 120, 255  ; 03 yellow
 ;           .byte 180,   0,   0, 255  ;    blue
-            .byte $ba, $48, $0c, $ff  ; 04 blue, atari
+;           .byte $ba, $48, $0c, $ff  ; 04 blue, atari
+            .byte $82, $2f, $10, $ff  ;    blue, atari NTSC
             .byte 120,   0, 120, 255  ; 05 magenta
             .byte 110, 110,   0, 255  ; 06 cyan
             .byte $78, $78, $78, 255  ; 07 white
@@ -778,7 +779,7 @@ list:
   .endif
           .dword 0
   .if romloader_at_init
-romldr:   PLATFORM_INCBIN "fcode/romloader.fc"
+romldr:   .incbin "fcode/romloader.fc"
   .endif
 .endif
 

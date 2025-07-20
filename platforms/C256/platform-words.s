@@ -776,7 +776,7 @@ dword     LW,"LW"
           .dword ONE
           .dword BYTE_LOAD
           EXIT
-:         PLATFORM_INCBIN "fcode/xmodem.fc"
+:         .incbin "fcode/xmodem.fc"
 eword
 dword     ANSI,"ANSI"
           ENTER
@@ -784,7 +784,7 @@ dword     ANSI,"ANSI"
           .dword ONE
           .dword BYTE_LOAD
           EXIT
-:         PLATFORM_INCBIN "fcode/ansi.fc"
+:         .incbin "fcode/ansi.fc"
 eword
 dword     LE,"LE"
           ENTER
@@ -792,7 +792,7 @@ dword     LE,"LE"
           .dword ONE
           .dword BYTE_LOAD
           EXIT
-:         PLATFORM_INCBIN "fcode/editor.fc"
+:         .incbin "fcode/editor.fc"
 eword
 .endif
 

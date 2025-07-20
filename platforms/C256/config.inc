@@ -2,7 +2,7 @@
 ; in the platform's inc directory.
 
 ; Platform ports may wish to use this when copying this default config.inc
-PLATFORM_INCLUDE "platform-config.inc"
+.include "platform-config.inc"
 
 ; *** options ***
 
