@@ -22,6 +22,32 @@ dword		PRINT0,".PRINT0"
 			EXIT
 eword
 
+dword       CLOCKSET24,"CLOCK-SET-24"
+			ENTER
+			ONLIT $AF080E		; control
+			.dword CPEEK
+			.dword DROP
+			ONLIT 2				; enable 24H
+			.dword LOR
+			ONLIT $AF080E		; control
+			.dword CPOKE
+			.dword DROP
+			EXIT
+eword
+
+dword       CLOCKSET12,"CLOCK-SET-12"
+			ENTER
+			ONLIT $AF080E		; control
+			.dword CPEEK
+			.dword DROP
+			ONLIT 253			; clear 24H
+			.dword LAND
+			ONLIT $AF080E		; control
+			.dword CPOKE
+			.dword DROP
+			EXIT
+eword
+
 ; ( second minute hour day month year -- )
 dword		DOTTD,".TD"
 			ENTER				 
@@ -50,6 +76,8 @@ month:      .dword UDOTZ          ; ( base second minute hour day )
 day:		.dword UDOTZ          ; ( base second minute hour         )
 			SLIT " "
             .dword TYPE
+			ONLIT 127
+			.dword LAND
 			.dword DUP            ; ( base second minute hour hour    )
 			ONLIT 10              ; ( base second minute hour hour 10 )
 			.dword ULT            ; ( base second minute hour t/f     )
@@ -74,7 +102,40 @@ minute:		.dword UDOTZ          ; ( base second            )
 			.dword _IF
 			.dword second
 			.dword PRINT0
-second:		.dword UDOT			  ; ( base       )
+second:		.dword UDOTZ		  ; ( base       )
+			ONLIT $af080e
+			.dword CPEEK
+			.dword DROP
+			ONLIT 2
+			.dword LAND
+			ONLIT 0
+			.dword _IFEQUAL
+			.dword restorebase
+			.dword DROP
+			ONLIT $af0804
+			.dword CPEEK
+			.dword DROP
+			ONLIT 128
+			.dword LAND
+			ONLIT 0
+			.dword _IFEQUAL
+			.dword pm
+
+			.dword DROP
+			SLIT " AM"
+			.dword TYPE
+			.dword BASE
+			.dword STORE
+			EXIT
+
+pm:			.dword DROP
+			SLIT " PM"
+			.dword TYPE
+			.dword BASE
+			.dword STORE
+			EXIT
+
+restorebase: .dword DROP 
 			.dword BASE			  ; ( base $BASE )
 			.dword STORE          ; ()
 			EXIT
