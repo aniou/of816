@@ -108,34 +108,26 @@ second:		.dword UDOTZ		  ; ( base       )
 			.dword DROP
 			ONLIT 2
 			.dword LAND
-			ONLIT 0
-			.dword _IFEQUAL
+			ONLIT 2
+			.dword EQUAL
+			.dword _IFFALSE
 			.dword restorebase
-			.dword DROP
+
 			ONLIT $af0804
 			.dword CPEEK
 			.dword DROP
 			ONLIT 128
 			.dword LAND
-			ONLIT 0
-			.dword _IFEQUAL
+			ONLIT 128
+			.dword EQUAL
+			.dword _IFFALSE
 			.dword pm
-
-			.dword DROP
 			SLIT " AM"
+			.dword _JUMP
+			.dword restorebase
+pm:			SLIT " PM"
 			.dword TYPE
-			.dword BASE
-			.dword STORE
-			EXIT
-
-pm:			.dword DROP
-			SLIT " PM"
-			.dword TYPE
-			.dword BASE
-			.dword STORE
-			EXIT
-
-restorebase: .dword DROP 
+restorebase: 
 			.dword BASE			  ; ( base $BASE )
 			.dword STORE          ; ()
 			EXIT
