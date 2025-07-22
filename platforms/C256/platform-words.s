@@ -15,157 +15,134 @@ C256_DOS_DIR_PTR     = $000338   ; 4 byte pointer to a directory entry
 C256_DOS_FD_PTR      = $000340   ; 4 byte pointer to FD data
 C256_DOS_DST_PTR     = $000354   ; 4 bytes - Pointer for transferring data
 
-dword		PRINT0,".PRINT0"
-			ENTER
-			SLIT "0"
-			.dword TYPE
-			EXIT
+dword       SETCLOCK24,"SET-CLOCK-24"
+            ENTER
+            ONLIT $AF080E       ; control
+            .dword CPEEK
+            .dword DROP
+            ONLIT 2             ; enable 24H
+            .dword LOR
+            ONLIT $AF080E       ; control
+            .dword CPOKE
+            .dword DROP
+            EXIT
 eword
 
-dword       CLOCKSET24,"CLOCK-SET-24"
-			ENTER
-			ONLIT $AF080E		; control
-			.dword CPEEK
-			.dword DROP
-			ONLIT 2				; enable 24H
-			.dword LOR
-			ONLIT $AF080E		; control
-			.dword CPOKE
-			.dword DROP
-			EXIT
+dword       SETCLOCK12,"SET-CLOCK-12"
+            ENTER
+            ONLIT $AF080E       ; control
+            .dword CPEEK
+            .dword DROP
+            ONLIT 253           ; clear 24H
+            .dword LAND
+            ONLIT $AF080E       ; control
+            .dword CPOKE
+            .dword DROP
+            EXIT
 eword
 
-dword       CLOCKSET12,"CLOCK-SET-12"
-			ENTER
-			ONLIT $AF080E		; control
-			.dword CPEEK
-			.dword DROP
-			ONLIT 253			; clear 24H
-			.dword LAND
-			ONLIT $AF080E		; control
-			.dword CPOKE
-			.dword DROP
-			EXIT
+hword       _PPAD10,"_PPAD10"   ; print padded by 0 if < 10
+            ENTER
+            .dword DUP            ; ( base second minute hour day month month    )
+            ONLIT 10              ; ( base second minute hour day month month 10 )
+            .dword ULT            ; ( base second minute hour day month t/f      )
+            .dword _IF
+            .dword :+
+            SLIT "0"
+            .dword TYPE
+:           .dword UDOTZ          ; ( base second minute hour day )
+            EXIT
 eword
 
 ; ( second minute hour day month year -- )
-dword		DOTTD,".TD"
-			ENTER				 
-			.dword BASE           ; ( $BASE )
-			.dword FETCH          ; ( base  )
-			.dword HEX
-			.dword GET_TIME       ; ( base second minute hour day month year )
+dword       DOTTD,".TD"
+            ENTER                
+            .dword BASE           ; ( $BASE )
+            .dword FETCH          ; ( base  )
+            .dword HEX
+            .dword GET_TIME       ; ( base second minute hour day month year )
             .dword UDOTZ          ; ( base second minute hour day month )
             SLIT "-"             
             .dword TYPE
-			.dword DUP            ; ( base second minute hour day month month    )
-			ONLIT 10              ; ( base second minute hour day month month 10 )
-			.dword ULT            ; ( base second minute hour day month t/f      )
-			.dword _IF
-			.dword month
-			.dword PRINT0
-month:      .dword UDOTZ          ; ( base second minute hour day )
+            .dword _PPAD10        ; ( base second minute hour day )
             SLIT "-"
             .dword TYPE
-			.dword DUP            ; ( base second minute hour day day    )
-			ONLIT 10              ; ( base second minute hour day day 10 )
-			.dword ULT            ; ( base second minute hour day t/f    )
-			.dword _IF
-			.dword day
-			.dword PRINT0
-day:		.dword UDOTZ          ; ( base second minute hour         )
-			SLIT " "
+            .dword _PPAD10        ; ( base second minute hour         )
+            SLIT " "
             .dword TYPE
-			ONLIT 127
-			.dword LAND
-			.dword DUP            ; ( base second minute hour hour    )
-			ONLIT 10              ; ( base second minute hour hour 10 )
-			.dword ULT            ; ( base second minute hour t/f     )
-			.dword _IF
-			.dword hour
-			.dword PRINT0
-hour:		.dword UDOTZ          ; ( base second minute           )
-			SLIT ":"
+            ONLIT 127
+            .dword LAND
+            .dword _PPAD10        ; ( base second minute           )
+            SLIT ":"
             .dword TYPE
-			.dword DUP            ; ( base second minute minute     )
-			ONLIT 10              ; ( base second minute minute 10  )
-			.dword ULT            ; ( base second minute t/f        )
-			.dword _IF
-			.dword minute
-			.dword PRINT0
-minute:		.dword UDOTZ          ; ( base second            )
-			SLIT ":"
+            .dword _PPAD10        ; ( base second            )
+            SLIT ":"
             .dword TYPE
-			.dword DUP            ; ( base second second     )
-			ONLIT 10              ; ( base second second 10  )
-			.dword ULT            ; ( base second t/f        )
-			.dword _IF
-			.dword second
-			.dword PRINT0
-second:		.dword UDOTZ		  ; ( base       )
-			ONLIT $af080e
-			.dword CPEEK
-			.dword DROP
-			ONLIT 2
-			.dword LAND
-			ONLIT 2
-			.dword EQUAL
-			.dword _IFFALSE
-			.dword restorebase
+            .dword _PPAD10        ; ( base       )
 
-			ONLIT $af0804
-			.dword CPEEK
-			.dword DROP
-			ONLIT 128
-			.dword LAND
-			ONLIT 128
-			.dword EQUAL
-			.dword _IFFALSE
-			.dword pm
-			SLIT " AM"
-			.dword _JUMP
-			.dword restorebase
-pm:			SLIT " PM"
-			.dword TYPE
+            ONLIT $af080e         ; check if mode is 24 or 12
+            .dword CPEEK
+            .dword DROP
+            ONLIT 2
+            .dword LAND
+            ONLIT 2
+            .dword EQUAL
+            .dword _IFFALSE
+            .dword restorebase    ; 24h - jump to finish
+
+            ONLIT $af0804         ; check if oldest bit in hour is 1 (PM) o 0 (AM)
+            .dword CPEEK
+            .dword DROP
+            ONLIT 128
+            .dword LAND
+            ONLIT 128
+            .dword EQUAL
+            .dword _IFFALSE
+            .dword pm
+            SLIT " AM"
+            .dword _JUMP
+            .dword restorebase
+pm:         SLIT " PM"
+            .dword TYPE
 restorebase: 
-			.dword BASE			  ; ( base $BASE )
-			.dword STORE          ; ()
-			EXIT
+            .dword BASE           ; ( base $BASE )
+            .dword STORE          ; ()
+            EXIT
 eword
 
 ; get-time ( -- second minute hour day month year )
 ; compatible with open firmware
-dword		GET_TIME,"GET-TIME"
-			ENTER
+dword       GET_TIME,"GET-TIME"
+            ENTER
 
-			ONLIT $AF0800		; second
-			.dword CPEEK
+            ONLIT $AF0800       ; second
+            .dword CPEEK
             .dword DROP
-			ONLIT $AF0802		; minute
-			.dword CPEEK
+            ONLIT $AF0802       ; minute
+            .dword CPEEK
             .dword DROP
-			ONLIT $AF0804		; hour
-			.dword CPEEK
-            .dword DROP
-
-			ONLIT $AF0806		; day
-			.dword CPEEK
+            ONLIT $AF0804       ; hour
+            .dword CPEEK
             .dword DROP
 
-			ONLIT $AF0809		; month
-			.dword CPEEK
+            ONLIT $AF0806       ; day
+            .dword CPEEK
             .dword DROP
 
-			ONLIT $AF080F		; century
-			.dword CPEEK
+            ONLIT $AF0809       ; month
+            .dword CPEEK
             .dword DROP
-			ONLIT 8
-			.dword LSHIFT		; shift century by 8 bits left
-			ONLIT $AF080A		; year in century
-			.dword CPEEK
+
+            ONLIT $AF080F       ; century
+            .dword CPEEK
             .dword DROP
-			.dword LOR			; combine with century
-			EXIT
+            ONLIT 8
+            .dword LSHIFT       ; shift century by 8 bits left
+            ONLIT $AF080A       ; year in century
+            .dword CPEEK
+            .dword DROP
+            .dword LOR          ; combine with century
+            EXIT
 eword
 
 ; another, simpler approach
@@ -529,11 +506,11 @@ dword       FILE_LOAD,"FILE-LOAD"
             jsl  c256::F_OPEN
             bcs  :+                    ; C=0 in C256 == failure
 
-	; set fileaddr=0 when something has failed
+    ; set fileaddr=0 when something has failed
             lda  #0
             tay
-            jsr  _pushay	      ; ; ( name0, len, fd,  buf, fileaddr=0            )
-	bra  fopen_finish
+            jsr  _pushay          ; ; ( name0, len, fd,  buf, fileaddr=0            )
+    bra  fopen_finish
 
 :
             ; allocate area for file
@@ -561,16 +538,16 @@ dword       FILE_LOAD,"FILE-LOAD"
 fopen_read:
             ldy  #0
 fopen_loop:
-	setas	      ; optimize it to words? source buffer already is in power of 2
+    setas         ; optimize it to words? source buffer already is in power of 2
             lda  [dos::BUFFER_PTR], y  ; relax, '[dir], y' does not wrap at bank boundary
             sta  [dos::DST_PTR], y     ; same as above
-	setal
+    setal
 
-	lda  dos::SIZE_COUNTER
-	bne  :+
-	dec  dos::SIZE_COUNTER+2
-:	dec  dos::SIZE_COUNTER
-	beq  fopen_finish
+    lda  dos::SIZE_COUNTER
+    bne  :+
+    dec  dos::SIZE_COUNTER+2
+:   dec  dos::SIZE_COUNTER
+    beq  fopen_finish
 
             iny
             cpy  #512
@@ -590,7 +567,7 @@ fopen_loop:
 fopen_finish:
             ENTER                      ; ( name0, len, fd,  buf, filelen, fileaddr       )
             .dword SWAP                ; ( name0, len, fd,  buf, fileaddr, filelen       )
-	.dword TWOPtoR             ; ( name0, len, fd,  buf ) ( R: fileaddr, filelen )
+    .dword TWOPtoR             ; ( name0, len, fd,  buf ) ( R: fileaddr, filelen )
                                        ; ( fname0, len, fd, buf ) ( R: fileaddr, filelen )
             .dword TWOSWAP             ; ( fd, buf, fname0, len ) ( R: fileaddr, filelen )
             .dword FREE                ; ( fd, buf              ) ( R: fileaddr, filelen )
@@ -598,7 +575,7 @@ fopen_finish:
             .dword FREE                ; ( fd                   ) ( R: fileaddr, filelen )
             ONLIT 0
             .dword FREE                ; ( --                   ) ( R: fileaddr, filelen )
-	.dword TWORtoP             ; ( fileaddr, filelen    )
+    .dword TWORtoP             ; ( fileaddr, filelen    )
             CODE
 
             lda f:C256_DOS_STATUS
